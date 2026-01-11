@@ -1,25 +1,20 @@
 // editor.js
 
-// ===== Ajout de la barre d'édition =====
 function addEditToolbar(container, item) {
+    if(container.querySelector('.edit-toolbar')) return; // éviter doublons
+
     const toolbar = document.createElement('div');
     toolbar.className = 'edit-toolbar';
-    container.appendChild(toolbar); // barre en bas
 
     const editBtn = document.createElement('button');
     editBtn.textContent = '✏️ Modifier';
     editBtn.className = 'edit-btn';
     editBtn.onclick = () => enableEditMode(container, item);
-    toolbar.appendChild(editBtn);
 
-    const previewBtn = document.createElement('button');
-    previewBtn.textContent = '👁️ Prévisualiser';
-    previewBtn.className = 'preview-btn';
-    previewBtn.onclick = () => previewEdits(container);
-    toolbar.appendChild(previewBtn);
+    toolbar.appendChild(editBtn);
+    container.prepend(toolbar);
 }
 
-// ===== Activer le mode édition =====
 function enableEditMode(container, item) {
     if (container.classList.contains('editing')) return;
     container.classList.add('editing');
@@ -28,84 +23,95 @@ function enableEditMode(container, item) {
     fields.forEach(div => {
         const field = div.dataset.field;
         const value = item[field] ?? '';
-        div.innerHTML = `
-            <strong>${field} :</strong><br>
-            <textarea data-edit-field="${field}">${value}</textarea>
-        `;
+        div.innerHTML = `<strong>${field} :</strong><br><textarea data-edit-field="${field}">${value}</textarea>`;
     });
 
-    // Actions bas de fiche
-    let actions = container.querySelector('.edit-actions');
-    if (!actions) {
-        actions = document.createElement('div');
-        actions.className = 'edit-actions';
-        container.appendChild(actions);
-    }
-    actions.innerHTML = '';
+    // Actions en bas
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
+
+    const previewBtn = document.createElement('button');
+    previewBtn.textContent = '👁️ Prévisualiser';
+    previewBtn.onclick = () => previewEdits(container);
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = '✔️ Valider';
-    saveBtn.onclick = () => saveEdits(container, item);
-    actions.appendChild(saveBtn);
+    saveBtn.onclick = () => commitEdits(container, item);
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = '❌ Annuler';
-    cancelBtn.onclick = () => cancelEdits(container);
+    cancelBtn.onclick = () => cancelEdits();
+
+    actions.appendChild(previewBtn);
+    actions.appendChild(saveBtn);
     actions.appendChild(cancelBtn);
+
+    container.appendChild(actions);
 }
 
-// ===== Prévisualiser =====
 function previewEdits(container) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
     edits.forEach(t => {
-        const parent = t.parentElement;
-        parent.innerHTML = `<strong>${t.dataset.editField} :</strong> ${t.value}`;
+        const field = t.dataset.editField;
+        const value = t.value;
+        const div = t.parentElement;
+        div.innerHTML = `<strong>${field} :</strong> ${value}`;
     });
-    alert('Prévisualisation appliquée (affichage local)');
+    alert("Prévisualisation appliquée (affichage brut)");
 }
 
-// ===== Sauvegarder les modifications =====
-function saveEdits(container, item) {
+function commitEdits(container, item) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
-    const updatedFields = {};
+    const updates = {};
 
     edits.forEach(t => {
-        item[t.dataset.editField] = t.value; // local
-        updatedFields[t.dataset.editField] = t.value;
+        const field = t.dataset.editField;
+        const value = t.value;
+        item[field] = value; // local
+        updates[field] = value; // pour le workflow
     });
 
-    alert('Modifications enregistrées localement');
+    // Déclenchement du workflow proxy
+    triggerProxyWorkflow(item.Fullname, updates);
 
-    // Déclenchement workflow proxy GitHub
-    triggerProxyWorkflow(item.Fullname, updatedFields);
+    alert("Modification envoyée à GitHub (workflow déclenché)");
+    container.classList.remove('editing');
+    performSearch(); // rafraîchir l'affichage
 }
 
-// ===== Annuler =====
 function cancelEdits() {
-    performSearch(); // refresh affichage
+    performSearch();
 }
 
-// ===== Déclenche le workflow proxy =====
+// --- Déclenchement du workflow proxy ---
 function triggerProxyWorkflow(fullname, updates) {
-    // Envoi des données au workflow proxy via fetch API côté serveur
+    const payload = {
+        fullname: fullname,
+        search_text: '',       // peut être vide, on utilise les rubriques
+        replace_text: '',      // idem
+        preview_only: 'false'
+    };
+
+    // Ajouter toutes les rubriques modifiées comme input 'rubrique=valeur'
+    Object.keys(updates).forEach((field, idx) => {
+        payload[`rubrique_${idx}`] = field + '||' + updates[field];
+    });
+
     fetch('https://api.github.com/repos/KumR67/Teachbiog/actions/workflows/trigger-modify-json.yaml/dispatches', {
         method: 'POST',
         headers: {
             'Accept': 'application/vnd.github+json',
             'Content-Type': 'application/json'
-            // ne pas mettre le PAT ici ! Il est côté Actions
+            // pas de token côté client, workflow proxy s'en occupe
         },
         body: JSON.stringify({
             ref: 'main',
-            inputs: {
-                fullname: fullname,
-                search_text: '', // on peut ajuster si besoin
-                replace_text: '', // on peut ajuster si besoin
-                preview_only: 'false' // on veut commit
-            }
+            inputs: payload
         })
-    }).then(r => {
-        if(r.ok) alert('Modification envoyée à GitHub');
-        else alert('❌ Erreur déclenchement workflow');
-    }).catch(e => alert('❌ Erreur réseau : ' + e));
+    })
+    .then(r => {
+        if(r.ok) console.log('✅ Workflow déclenché');
+        else r.text().then(txt => console.error('❌ Erreur déclenchement workflow :', txt));
+    })
+    .catch(e => console.error('❌ Erreur réseau workflow:', e));
 }

@@ -1,0 +1,30 @@
+name: Backup JSON on push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  backup-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create backup folder
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          BACKUP_DIR="backup/$TIMESTAMP"
+          mkdir -p $BACKUP_DIR
+          cp -r data/Word_to_Json_BiblioTeacher.json $BACKUP_DIR/
+          echo "Backup created in $BACKUP_DIR"
+
+      - name: Commit backup
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add backup
+          git diff --cached --quiet || git commit -m "Backup JSON at $(date +'%Y-%m-%d %H:%M:%S')"
+          git push

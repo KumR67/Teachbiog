@@ -7,7 +7,7 @@
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
 #search { width: 300px; padding: 8px; }
-#rubriques-container { margin: 10px 0; max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; display: inline-block; vertical-align: top; }
+#rubriques-container { margin: 10px 0; max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
 .rubrique-checkbox { margin-right: 10px; margin-bottom: 5px; display: inline-block; min-width: 150px; }
 button { padding: 8px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
 button:hover { background-color: #45a049; }
@@ -45,14 +45,14 @@ button:hover { background-color: #45a049; }
 
 <div>
     <input type="text" id="search" placeholder='Ex : archiv*  *tion  Greek Slavic School  "expression exacte"'>
+
     <div id="rubriques-container">
-        <div>
-            <strong>Filtres rubriques :</strong>
-            <button onclick="checkAllRubriques()">Tout cocher</button>
-            <button onclick="uncheckAllRubriques()">Tout décocher</button>
-        </div>
-        <div id="rubriques-list"></div>
+        <strong>Filtres rubriques :</strong>
+        <button onclick="checkAllRubriques()">Tout cocher</button>
+        <button onclick="uncheckAllRubriques()">Tout décocher</button>
+        <!-- Les checkboxes seront injectées ici -->
     </div>
+
     <button onclick="performSearch()">Rechercher</button>
 </div>
 
@@ -62,9 +62,7 @@ button:hover { background-color: #45a049; }
     <div id="records-column"></div>
 </div>
 
-<!-- Panneau de statut workflow -->
 <div id="workflow-status">Modifications prêtes apparaîtront ici...</div>
-
 <button id="backToTop" title="Remonter en haut">↑ Haut</button>
 
 <script>
@@ -73,39 +71,33 @@ let rubriques = new Set();
 const jsonUrl = 'https://gist.githubusercontent.com/KumR67/c09dc17f2720708f30308e787547c939/raw/c5105b67accb02801154256afa2a3bc5b1db50f6/tous_les_enregistrements.json';
 
 /* Chargement JSON */
-fetch(jsonUrl).then(r => r.json()).then(json => {
-    data = json;
-    data.forEach(item => {
-        Object.keys(item).forEach(k => {
-            if (k !== 'source') rubriques.add(k);
-        });
-    });
-    const c = document.getElementById('rubriques-list');
-    rubriques.forEach(r => {
-        const d = document.createElement('div');
-        d.className = 'rubrique-checkbox';
-        d.innerHTML = `<input type="checkbox" class="rubrique-check" id="rubrique-${r}" checked>
+fetch(jsonUrl).then(r=>r.json()).then(json=>{
+    data=json;
+    data.forEach(item=>Object.keys(item).forEach(k=>{if(k!=='source') rubriques.add(k);}));
+    const container=document.getElementById('rubriques-container');
+    rubriques.forEach(r=>{
+        const div=document.createElement('div');
+        div.className='rubrique-checkbox';
+        div.innerHTML=`<input type="checkbox" class="rubrique-check" id="rubrique-${r}" checked>
                        <label for="rubrique-${r}">${r}</label>`;
-        c.appendChild(d);
+        container.appendChild(div);
     });
 });
 
 /* Rubriques */
-function getSelectedRubriques() {
-    return [...rubriques].filter(r => document.getElementById(`rubrique-${r}`)?.checked);
-}
-function checkAllRubriques() { document.querySelectorAll('.rubrique-check').forEach(cb=>cb.checked=true);}
-function uncheckAllRubriques() { document.querySelectorAll('.rubrique-check').forEach(cb=>cb.checked=false);}
+function getSelectedRubriques(){ return [...rubriques].filter(r=>document.getElementById(`rubrique-${r}`)?.checked); }
+function checkAllRubriques(){ document.querySelectorAll('.rubrique-check').forEach(cb=>cb.checked=true); }
+function uncheckAllRubriques(){ document.querySelectorAll('.rubrique-check').forEach(cb=>cb.checked=false); }
 
 /* Parsing */
-function parseQuery(raw) {
-    const q = raw.trim();
-    if (!q) return { exactPhrase:'', terms:[] };
-    const exact = q.match(/^"(.*)"$/);
-    if (exact) return { exactPhrase: exact[1].toLowerCase(), terms:[] };
-    const parts = q.toLowerCase().split(/\s+/).filter(Boolean);
-    const terms = parts.map(p=>{
-        const clean = p.replace(/\*/g,'');
+function parseQuery(raw){
+    const q=raw.trim();
+    if(!q) return {exactPhrase:'',terms:[]};
+    const exact=q.match(/^"(.*)"$/);
+    if(exact) return {exactPhrase: exact[1].toLowerCase(), terms:[]};
+    const parts=q.toLowerCase().split(/\s+/).filter(Boolean);
+    const terms=parts.map(p=>{
+        const clean=p.replace(/\*/g,'');
         let regex;
         if(p.startsWith('*')&&p.endsWith('*')) regex=new RegExp(clean,'i');
         else if(p.startsWith('*')) regex=new RegExp(clean+'\\b','i');
@@ -118,22 +110,20 @@ function parseQuery(raw) {
 
 /* Recherche */
 function performSearch(){
-    const {exactPhrase, terms} = parseQuery(document.getElementById('search').value);
-    const selectedRubriques = getSelectedRubriques();
+    const {exactPhrase,terms}=parseQuery(document.getElementById('search').value);
+    const selectedRubriques=getSelectedRubriques();
     const sourcesCol=document.getElementById('sources-column');
     const recordsCol=document.getElementById('records-column');
     const countDiv=document.getElementById('results-count');
     sourcesCol.innerHTML=''; recordsCol.innerHTML=''; countDiv.innerHTML='';
-    const results=data.filter(item=>{
-        return Object.entries(item).some(([k,v])=>{
-            if(k==='source') return false;
-            if(selectedRubriques.length && !selectedRubriques.includes(k)) return false;
-            const text=String(v);
-            if(exactPhrase) return text.toLowerCase().includes(exactPhrase);
-            if(terms.length) return terms.every(t=>t.regex.test(text));
-            return true;
-        });
-    });
+    const results=data.filter(item=>Object.entries(item).some(([k,v])=>{
+        if(k==='source') return false;
+        if(selectedRubriques.length && !selectedRubriques.includes(k)) return false;
+        const text=String(v);
+        if(exactPhrase) return text.toLowerCase().includes(exactPhrase);
+        if(terms.length) return terms.every(t=>t.regex.test(text));
+        return true;
+    }));
     countDiv.textContent=`${results.length} enregistrement(s) trouvé(s)`;
     results.forEach((item,index)=>{
         const recordId=`record-${index}`;
@@ -146,7 +136,6 @@ function performSearch(){
         const d=document.createElement('div');
         d.className='result';
         d.id=recordId;
-
         const title=document.createElement('div');
         title.className='source';
         title.textContent=item.source;
@@ -160,10 +149,10 @@ function performSearch(){
             }
         });
 
-        const editBtn = document.createElement('button');
+        const editBtn=document.createElement('button');
         editBtn.textContent='Modifier cette fiche';
         editBtn.className='editor-btn';
-        editBtn.onclick = ()=>openEditor(item);
+        editBtn.onclick=()=>openEditor(item);
         d.appendChild(editBtn);
 
         recordsCol.appendChild(d);
@@ -181,7 +170,7 @@ function highlightField(text, exactPhrase, terms){
 /* Éditeur inline */
 function openEditor(item){
     const recordDiv=document.getElementById(`record-${data.indexOf(item)}`);
-    let existingEditor = recordDiv.querySelector('.editor-div');
+    let existingEditor=recordDiv.querySelector('.editor-div');
     if(existingEditor){ existingEditor.remove(); return; }
     const editorDiv=document.createElement('div');
     editorDiv.className='editor-div';
@@ -206,24 +195,20 @@ function openEditor(item){
     const applyBtn=document.createElement('button');
     applyBtn.textContent='Appliquer les modifications';
     applyBtn.className='editor-btn';
-    applyBtn.onclick=()=>{ 
+    applyBtn.onclick=()=>{
         const inputs=editorDiv.querySelectorAll('input');
         const modifications={};
         inputs.forEach(inp=>{if(inp.value!==item[inp.dataset.key]) modifications[inp.dataset.key]=inp.value;});
         if(Object.keys(modifications).length===0){ alert('Aucune modification détectée.'); return; }
-        // Mise à jour du panneau workflow
         const statusDiv=document.getElementById('workflow-status');
-        statusDiv.textContent=`Modifications prêtes pour ${item.Fullname} :\n${JSON.stringify(modifications, null, 2)}`;
+        statusDiv.textContent=`Modifications prêtes pour ${item.Fullname} :\n${JSON.stringify(modifications,null,2)}`;
     };
     editorDiv.appendChild(applyBtn);
 
     recordDiv.appendChild(editorDiv);
 }
 
-/* Entrée = recherche */
 document.getElementById('search').addEventListener('keydown', e=>{if(e.key==='Enter') performSearch();});
-
-/* Bouton retour en haut */
 const backToTop=document.getElementById('backToTop');
 window.addEventListener('scroll',()=>{ backToTop.style.display=window.scrollY>300?'block':'none'; });
 backToTop.addEventListener('click',()=>{ window.scrollTo({ top:0, behavior:'smooth' }); });

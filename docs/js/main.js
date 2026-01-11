@@ -1,24 +1,26 @@
+// main.js - fusion de search.js et main.js
+
 let data = [];
 let rubriques = new Set();
+const jsonUrl = 'data/Word_to_Json_BiblioTeacher.json';
 
-const jsonUrl = 'data/Word_to_Json_BiblioTeacher.json'; // chemin correct depuis index.html
-
-// Chargement JSON
+// ===== Chargement du JSON =====
 fetch(jsonUrl)
-.then(r => r.json())
-.then(json => {
-    data = json;
-    console.log("✅ JSON chargé :", data.length, "enregistrements");
+  .then(r => r.json())
+  .then(json => {
+      data = json;
+      console.log("✅ JSON chargé :", data.length, "enregistrements");
 
-    data.forEach(item => {
-        Object.keys(item).forEach(k => {
-            if (k !== 'source') rubriques.add(k);
-        });
-    });
+      // Collecte des rubriques (tous les champs sauf 'source')
+      data.forEach(item => {
+          Object.keys(item).forEach(k => {
+              if (k !== 'source') rubriques.add(k);
+          });
+      });
 
-    renderRubriques();
-})
-.catch(e => console.error("❌ Erreur chargement JSON :", e));
+      renderRubriques();
+  })
+  .catch(e => console.error("❌ Erreur chargement JSON :", e));
 
 // ===== Rubriques =====
 function renderRubriques() {
@@ -50,7 +52,7 @@ function uncheckAllRubriques() {
     document.querySelectorAll('.rubrique-check').forEach(cb => cb.checked = false);
 }
 
-// ===== Recherche =====
+// ===== Parsing de la requête =====
 function parseQuery(raw) {
     const q = raw.trim().toLowerCase();
     if (!q) return { exact: '', terms: [] };
@@ -65,12 +67,10 @@ function parseQuery(raw) {
     const terms = parts.map(p => {
         const clean = p.replace(/\*/g, '');
         let regex;
-
         if (p.startsWith('*') && p.endsWith('*')) regex = new RegExp(clean, 'i');
         else if (p.startsWith('*')) regex = new RegExp(clean + '\\b', 'i');
         else if (p.endsWith('*')) regex = new RegExp('\\b' + clean, 'i');
         else regex = new RegExp(clean, 'i');
-
         return { raw: p, regex };
     });
 
@@ -99,6 +99,7 @@ function performSearch() {
             const text = String(v).toLowerCase();
             if (exact) return text.includes(exact);
             if (terms.length) return terms.every(t => t.regex.test(text));
+
             return true;
         });
     });
@@ -125,6 +126,7 @@ function performSearch() {
         title.textContent = item.source;
         d.appendChild(title);
 
+        // Affichage des champs
         Object.keys(item).forEach(f => {
             if (f !== 'source') {
                 const line = document.createElement('div');
@@ -134,7 +136,7 @@ function performSearch() {
             }
         });
 
-        addEditToolbar(d, item); // depuis editor.js
+        addEditToolbar(d, item); // editor.js gère les boutons Modifier / Valider / Annuler
         recordsCol.appendChild(d);
     });
 }
@@ -148,26 +150,26 @@ function highlightField(html, exact, terms) {
         result = result.replace(re, m => `<span class="match">${m}</span>`);
     }
 
-    terms.forEach(t => {
-        if (!t.regex) return;
-        result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
-    });
+    if (terms && terms.length) {
+        terms.forEach(t => {
+            if (!t.regex) return;
+            result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
+        });
+    }
 
-    return result; // le HTML est interprété dans innerHTML
+    return result; // HTML interprété dans innerHTML
 }
 
-// ===== Entrée clavier =====
+// ===== Événements =====
 document.getElementById('search').addEventListener('keydown', e => {
     if (e.key === 'Enter') performSearch();
 });
 
-// ===== Bouton retour en haut =====
+// Bouton retour en haut
 const backToTop = document.getElementById('backToTop');
-
 window.addEventListener('scroll', () => {
     backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
 });
-
 backToTop.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 });

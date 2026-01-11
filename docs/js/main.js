@@ -1,4 +1,3 @@
-/* Recherche et affichage */
 function performSearch() {
     const { exactPhrase, terms } = parseQuery(document.getElementById('search').value);
     const selectedRubriques = getSelectedRubriques();
@@ -49,11 +48,15 @@ function performSearch() {
             d.appendChild(line);
         });
 
+        addEditButtons(d, item);
         recordsCol.appendChild(d);
     });
 }
 
-/* Retour en haut */
 const backToTop = document.getElementById('backToTop');
 window.addEventListener('scroll',()=>backToTop.style.display=window.scrollY>300?'block':'none');
 backToTop.addEventListener('click',()=>window.scrollTo({top:0, behavior:'smooth'}));
+
+document.getElementById('search').addEventListener('keydown', e => {
+    if (e.key === 'Enter') performSearch();
+});

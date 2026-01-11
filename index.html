@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Editor – Biographical Dictionary</title>
+<link rel="stylesheet" href="layout.css">
+<link rel="stylesheet" href="dico_tionok.css">
+</head>
+<body>
+
+<h1>JSON Editor – Biographical Dictionary</h1>
+
+<div>
+  <label>Fullname (leave empty for all):</label><br>
+  <input id="fullname" placeholder="Fischer, Michael"><br>
+
+  <label>Rubrique (leave empty for all):</label><br>
+  <input id="rubrique" placeholder="Personal records"><br>
+
+  <label>Text to search:</label><br>
+  <input id="search_text" placeholder="Михаэль"><br>
+
+  <label>Replace with:</label><br>
+  <input id="replace_text" placeholder="Михаил"><br>
+
+  <label>
+    <input type="checkbox" id="preview_only" checked>
+    Preview only (do not commit)
+  </label><br><br>
+
+  <button onclick="runWorkflow()">Run Modification</button>
+</div>
+
+<div id="workflow-status" style="margin-top:20px; white-space: pre-line;"></div>
+
+<script>
+// ⚠️ Remplace par ton token PAT GitHub (avec repo scope)
+const GITHUB_TOKEN = "ghp_XXXXXXXXXXXXXXXXXXXX";
+const REPO_OWNER = "KumR67";
+const REPO_NAME = "Teachbiog";
+const WORKFLOW_ID = "modify-json-via-browser.yaml"; // workflow file name
+
+async function runWorkflow() {
+  const fullname = document.getElementById("fullname").value;
+  const rubrique = document.getElementById("rubrique").value;
+  const search_text = document.getElementById("search_text").value;
+  const replace_text = document.getElementById("replace_text").value;
+  const preview_only = document.getElementById("preview_only").checked;
+
+  const statusDiv = document.getElementById("workflow-status");
+  statusDiv.textContent = "🚀 Running workflow...";
+
+  const response = await fetch(
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_ID}/dispatches`,
+    {
+      method: "POST",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer " + GITHUB_TOKEN,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ref: "main",
+        inputs: {
+          fullname,
+          rubrique,
+          search_text,
+          replace_text,
+          preview_only: preview_only.toString()
+        }
+      })
+    }
+  );
+
+  if (response.ok) {
+    statusDiv.textContent = "✅ Workflow triggered! Check GitHub Actions for results.";
+  } else {
+    const errorText = await response.text();
+    statusDiv.textContent = `❌ Error triggering workflow:\n${errorText}`;
+  }
+}
+</script>
+
+</body>
+</html>

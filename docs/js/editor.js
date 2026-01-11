@@ -1,57 +1,60 @@
-function addEditToolbar(recordDiv, item) {
+function addEditToolbar(container, item) {
     const toolbar = document.createElement('div');
     toolbar.className = 'edit-toolbar';
 
     const editBtn = document.createElement('button');
-    editBtn.textContent = 'Modifier cette fiche';
+    editBtn.textContent = '✏️ Modifier';
     editBtn.className = 'edit-btn';
 
-    editBtn.onclick = () => enableEditing(recordDiv, item);
+    editBtn.onclick = () => enableEditMode(container, item);
 
     toolbar.appendChild(editBtn);
-    recordDiv.appendChild(toolbar);
+    container.prepend(toolbar);
 }
 
-function enableEditing(recordDiv, item) {
-    const original = JSON.parse(JSON.stringify(item)); // clone pour annuler
+function enableEditMode(container, item) {
+    if (container.classList.contains('editing')) return;
+    container.classList.add('editing');
 
-    recordDiv.querySelectorAll('[data-field]').forEach(div => {
+    const fields = container.querySelectorAll('[data-field]');
+
+    fields.forEach(div => {
         const field = div.dataset.field;
         const value = item[field] ?? '';
 
-        const textarea = document.createElement('textarea');
-        textarea.className = 'edit-field';
-        textarea.value = value;
-
-        div.innerHTML = `<strong>${field} :</strong>`;
-        div.appendChild(textarea);
+        div.innerHTML = `
+            <strong>${field} :</strong><br>
+            <textarea data-edit-field="${field}">${value}</textarea>
+        `;
     });
 
-    const toolbar = recordDiv.querySelector('.edit-toolbar');
-    toolbar.innerHTML = '';
+    const actions = document.createElement('div');
+    actions.className = 'edit-actions';
 
-    const applyBtn = document.createElement('button');
-    applyBtn.textContent = 'Appliquer (local)';
-    applyBtn.className = 'edit-btn confirm';
-
-    applyBtn.onclick = () => {
-        recordDiv.querySelectorAll('[data-field]').forEach(div => {
-            const field = div.dataset.field;
-            const textarea = div.querySelector('textarea');
-            if (textarea) item[field] = textarea.value;
-        });
-        performSearch();
-    };
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '✔️ Valider';
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Annuler';
-    cancelBtn.className = 'edit-btn cancel';
+    cancelBtn.textContent = '❌ Annuler';
 
-    cancelBtn.onclick = () => {
-        Object.assign(item, original);
-        performSearch();
-    };
+    saveBtn.onclick = () => saveEdits(container, item);
+    cancelBtn.onclick = () => cancelEdits();
 
-    toolbar.appendChild(applyBtn);
-    toolbar.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    container.appendChild(actions);
+}
+
+function saveEdits(container, item) {
+    const edits = container.querySelectorAll('textarea[data-edit-field]');
+    edits.forEach(t => {
+        item[t.dataset.editField] = t.value;
+    });
+
+    alert('Modifications enregistrées (localement)');
+    performSearch(); // refresh
+}
+
+function cancelEdits() {
+    performSearch();
 }

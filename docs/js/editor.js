@@ -1,112 +1,111 @@
+// editor.js
+
+// ===== Ajout de la barre d'édition =====
 function addEditToolbar(container, item) {
     const toolbar = document.createElement('div');
     toolbar.className = 'edit-toolbar';
+    container.appendChild(toolbar); // barre en bas
 
     const editBtn = document.createElement('button');
     editBtn.textContent = '✏️ Modifier';
     editBtn.className = 'edit-btn';
-
     editBtn.onclick = () => enableEditMode(container, item);
-
     toolbar.appendChild(editBtn);
-    container.prepend(toolbar);
+
+    const previewBtn = document.createElement('button');
+    previewBtn.textContent = '👁️ Prévisualiser';
+    previewBtn.className = 'preview-btn';
+    previewBtn.onclick = () => previewEdits(container);
+    toolbar.appendChild(previewBtn);
 }
 
+// ===== Activer le mode édition =====
 function enableEditMode(container, item) {
     if (container.classList.contains('editing')) return;
     container.classList.add('editing');
 
     const fields = container.querySelectorAll('[data-field]');
-
     fields.forEach(div => {
         const field = div.dataset.field;
         const value = item[field] ?? '';
-
         div.innerHTML = `
             <strong>${field} :</strong><br>
             <textarea data-edit-field="${field}">${value}</textarea>
         `;
     });
 
-    const actions = document.createElement('div');
-    actions.className = 'edit-actions';
-
-    const previewBtn = document.createElement('button');
-    previewBtn.textContent = '👁️ Prévisualiser';
-    previewBtn.onclick = () => {
-        alert("Prévisualisation appliquée (affichage brut)");
-        // Optionnel : tu pourrais mettre à jour un div preview ici
-    };
+    // Actions bas de fiche
+    let actions = container.querySelector('.edit-actions');
+    if (!actions) {
+        actions = document.createElement('div');
+        actions.className = 'edit-actions';
+        container.appendChild(actions);
+    }
+    actions.innerHTML = '';
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = '✔️ Valider';
     saveBtn.onclick = () => saveEdits(container, item);
+    actions.appendChild(saveBtn);
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = '❌ Annuler';
-    cancelBtn.onclick = () => cancelEdits();
-
-    actions.appendChild(previewBtn);
-    actions.appendChild(saveBtn);
+    cancelBtn.onclick = () => cancelEdits(container);
     actions.appendChild(cancelBtn);
-    container.appendChild(actions);
 }
 
+// ===== Prévisualiser =====
+function previewEdits(container) {
+    const edits = container.querySelectorAll('textarea[data-edit-field]');
+    edits.forEach(t => {
+        const parent = t.parentElement;
+        parent.innerHTML = `<strong>${t.dataset.editField} :</strong> ${t.value}`;
+    });
+    alert('Prévisualisation appliquée (affichage local)');
+}
+
+// ===== Sauvegarder les modifications =====
 function saveEdits(container, item) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
-    const modifiedFields = {};
+    const updatedFields = {};
 
     edits.forEach(t => {
-        const field = t.dataset.editField;
-        const value = t.value;
-        item[field] = value; // mise à jour locale
-        modifiedFields[field] = value; // pour envoyer au workflow
+        item[t.dataset.editField] = t.value; // local
+        updatedFields[t.dataset.editField] = t.value;
     });
 
-    // Envoi vers GitHub Actions via workflow proxy
-    const fullname = item['Fullname'];
-    if (!fullname) {
-        alert("Impossible : la fiche n'a pas de Fullname");
-        return;
-    }
+    alert('Modifications enregistrées localement');
 
-    // On peut envoyer chaque rubrique modifiée une par une
-    Object.entries(modifiedFields).forEach(([field, value]) => {
-        triggerWorkflow(fullname, field, value);
-    });
-
-    alert('✅ Modifications envoyées à GitHub');
-    container.classList.remove('editing');
-    performSearch(); // rafraîchit l’affichage
+    // Déclenchement workflow proxy GitHub
+    triggerProxyWorkflow(item.Fullname, updatedFields);
 }
 
+// ===== Annuler =====
 function cancelEdits() {
-    performSearch();
+    performSearch(); // refresh affichage
 }
 
-// ===== Fonction pour déclencher le workflow via fetch =====
-function triggerWorkflow(fullname, field, newText) {
+// ===== Déclenche le workflow proxy =====
+function triggerProxyWorkflow(fullname, updates) {
+    // Envoi des données au workflow proxy via fetch API côté serveur
     fetch('https://api.github.com/repos/KumR67/Teachbiog/actions/workflows/trigger-modify-json.yaml/dispatches', {
         method: 'POST',
         headers: {
             'Accept': 'application/vnd.github+json',
-            'Authorization': 'Bearer ' + GITHUB_PAT, // à définir dans main.js ou via input
             'Content-Type': 'application/json'
+            // ne pas mettre le PAT ici ! Il est côté Actions
         },
         body: JSON.stringify({
             ref: 'main',
             inputs: {
                 fullname: fullname,
-                rubrique: field,
-                search_text: '',   // tu peux le remplir si nécessaire
-                replace_text: newText,
-                preview_only: 'false'
+                search_text: '', // on peut ajuster si besoin
+                replace_text: '', // on peut ajuster si besoin
+                preview_only: 'false' // on veut commit
             }
         })
-    })
-    .then(resp => {
-        if (resp.ok) console.log(`✅ Workflow déclenché pour ${fullname} → ${field}`);
-        else console.error('❌ Erreur déclenchement workflow', resp.status, resp.statusText);
-    })
-    .catch(err => console.error('❌ Erreur fetch workflow', err));
+    }).then(r => {
+        if(r.ok) alert('Modification envoyée à GitHub');
+        else alert('❌ Erreur déclenchement workflow');
+    }).catch(e => alert('❌ Erreur réseau : ' + e));
 }

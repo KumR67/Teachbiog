@@ -1,33 +1,41 @@
+/* ===== Barre d'édition en haut de chaque fiche ===== */
 .edit-toolbar {
-    text-align: right;
-    margin-bottom: 8px;
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+    position: sticky;
+    top: 0;
+    background: #f9f9f9;
+    z-index: 5;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
 }
 
-.edit-btn {
-    background: #ff9800;
-    color: #fff;
-    border: none;
+/* ===== Boutons ===== */
+.edit-toolbar button,
+.edit-actions button {
     padding: 5px 10px;
     cursor: pointer;
 }
 
-.edit-btn:hover {
-    background: #e68900;
-}
-
-.result.editing textarea {
-    width: 100%;
-    min-height: 80px;
-    margin-top: 5px;
-    font-family: inherit;
-}
-
+/* ===== Actions en bas de la fiche ===== */
 .edit-actions {
+    display: flex;
+    gap: 5px;
     margin-top: 10px;
-    text-align: right;
 }
 
-.edit-actions button {
-    margin-left: 8px;
-    padding: 6px 12px;
+/* ===== Textarea pour édition ===== */
+textarea {
+    width: 100%;
+    min-height: 60px;
+    font-family: Arial, sans-serif;
+}
+
+/* ===== Prévisualisation ===== */
+.preview-area {
+    border: 1px dashed #ccc;
+    padding: 10px;
+    background: #fff8dc;
+    margin-top: 5px;
 }

@@ -1,0 +1,109 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    line-height: 1.6;
+}
+
+#search {
+    width: 300px;
+    padding: 8px;
+}
+
+#rubriques-container {
+    margin: 10px 0;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.rubrique-checkbox {
+    margin-right: 10px;
+    margin-bottom: 5px;
+    display: inline-block;
+    min-width: 150px;
+}
+
+button {
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.match {
+    background-color: #ffff00;
+}
+
+.result {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.source {
+    font-weight: bold;
+    color: #0066cc;
+    margin-bottom: 5px;
+}
+
+#results-count {
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+#results-layout {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+#sources-column {
+    width: 260px;
+    border-right: 1px solid #ddd;
+    padding-right: 10px;
+}
+
+#records-column {
+    flex: 1;
+}
+
+.source-item {
+    cursor: pointer;
+    color: #0066cc;
+    margin-bottom: 6px;
+}
+
+.source-item:hover {
+    text-decoration: underline;
+}
+
+/* Bouton retour en haut */
+#backToTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 14px;
+    font-size: 15px;
+    border-radius: 30px;
+    background-color: rgba(0, 102, 204, 0.6);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: none;
+    backdrop-filter: blur(2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+#backToTop:hover {
+    background-color: rgba(0, 102, 204, 0.85);
+}

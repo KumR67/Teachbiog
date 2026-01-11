@@ -1,27 +1,50 @@
-name: Modify JSON file
+name: Modify specific record
 
 on:
   workflow_dispatch:
 
 jobs:
-  modify-json:
+  modify-fischer:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Inspect JSON file
+      - name: Update Fischer, Michael
         run: |
-          echo "📂 File info:"
-          ls -l data
-          echo "📖 First 20 lines of JSON:"
-          sed -n '1,20p' data/Word_to_Json_BiblioTeacher.json
+          python << 'EOF'
+          import json
+
+          path = "data/Word_to_Json_BiblioTeacher.json"
+
+          # Charger le JSON
+          with open(path, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          modified = 0
+
+          # Parcourir toutes les fiches
+          for item in data:
+              if item.get("Fullname") == "Fischer, Michael":
+                  # Boucle sur les rubriques pour remplacer le texte
+                  for key, value in item.items():
+                      if isinstance(value, str) and "Михаэль" in value:
+                          item[key] = value.replace("Михаэль", "Михаил")
+                          modified += 1
+
+          # Vérifier qu’on a bien modifié
+          print(f"✅ Fields modified: {modified}")
+
+          # Sauvegarder le JSON
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+          EOF
 
       - name: Commit changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add data/Word_to_Json_BiblioTeacher.json
-          git commit -m "Automated test modification of JSON"
+          git diff --cached --quiet || git commit -m "Corrected Михаэль → Михаил in Fischer, Michael"
           git push

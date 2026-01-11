@@ -1,6 +1,6 @@
 let data = [];
 let rubriques = new Set();
-const jsonUrl = 'data/tous_les_enregistrements.json';
+const jsonUrl = 'data/Word_to_Json_BiblioTeacher.json';
 
 fetch(jsonUrl)
 .then(r => r.json())

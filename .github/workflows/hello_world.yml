@@ -11,15 +11,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Modify JSON
-        run: |
-                - name: Inspect JSON file
+      - name: Inspect JSON file
         run: |
           echo "📂 File info:"
           ls -l data
           echo "📖 First 20 lines of JSON:"
           sed -n '1,20p' data/Word_to_Json_BiblioTeacher.json
-
 
       - name: Commit changes
         run: |

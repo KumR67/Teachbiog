@@ -35,7 +35,7 @@ jobs:
       - name: Call Modify JSON Workflow
         uses: peter-evans/workflow-dispatch@v1
         with:
-          workflow: modify-json-via-browser.yaml
+          workflow: modify_json.yaml
           ref: main
           token: ${{ secrets.PAT_TOKEN }}
           inputs: |

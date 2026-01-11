@@ -84,12 +84,14 @@ function performSearch() {
 
     const results = data.filter(item => {
         return Object.entries(item).some(([k, v]) => {
-            if(k === 'source') return false;
-            if(selected.length && !selected.includes(k)) return false;
+            if (k === 'source') return false;
+            if (selected.length && !selected.includes(k)) return false;
 
             const text = String(v).toLowerCase();
-            if(exact) return text.includes(exact);
-            if(terms.length) return terms.every(r => r.test(text));
+
+            if (exact) return text.includes(exact);
+            if (terms.length) return terms.every(t => t.regex.test(text));
+
             return true;
         });
     });
@@ -102,7 +104,9 @@ function performSearch() {
         const s = document.createElement('div');
         s.className = 'source-item';
         s.textContent = item.source;
-        s.onclick = () => document.getElementById(recordId).scrollIntoView({behavior:'smooth'});
+        s.onclick = () =>
+            document.getElementById(recordId)
+                .scrollIntoView({ behavior: 'smooth' });
         sourcesCol.appendChild(s);
 
         const d = document.createElement('div');
@@ -115,16 +119,21 @@ function performSearch() {
         d.appendChild(title);
 
         Object.keys(item).forEach(f => {
-            if(f !== 'source') {
+            if (f !== 'source') {
                 const line = document.createElement('div');
-                line.innerHTML = `<strong>${f} :</strong> ${highlightField(String(item[f]), exact, terms)}`;
+                line.dataset.field = f;
+                line.innerHTML =
+                    `<strong>${f} :</strong> ` +
+                    highlightField(String(item[f]), exact, terms);
                 d.appendChild(line);
             }
         });
 
+        addEditToolbar(d, item);
         recordsCol.appendChild(d);
     });
 }
+
 
 function highlightField(text, exact, terms) {
     let r = text;

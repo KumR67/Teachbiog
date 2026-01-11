@@ -1,27 +1,33 @@
 .edit-toolbar {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px dashed #ccc;
+    text-align: right;
+    margin-bottom: 8px;
 }
 
 .edit-btn {
-    margin-right: 8px;
-    padding: 6px 10px;
-    font-size: 13px;
-    background-color: #666;
+    background: #ff9800;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
 }
 
-.edit-btn.confirm {
-    background-color: #2e7d32;
+.edit-btn:hover {
+    background: #e68900;
 }
 
-.edit-btn.cancel {
-    background-color: #b71c1c;
-}
-
-.edit-field {
+.result.editing textarea {
     width: 100%;
-    margin-top: 4px;
-    padding: 6px;
+    min-height: 80px;
+    margin-top: 5px;
     font-family: inherit;
+}
+
+.edit-actions {
+    margin-top: 10px;
+    text-align: right;
+}
+
+.edit-actions button {
+    margin-left: 8px;
+    padding: 6px 12px;
 }

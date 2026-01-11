@@ -1,0 +1,46 @@
+name: Trigger Modify JSON via Proxy
+
+on:
+  workflow_dispatch:
+    inputs:
+      fullname:
+        description: 'Fullname of the record to modify'
+        required: false
+        default: ''
+      rubrique:
+        description: 'Field/rubrique to modify'
+        required: false
+        default: ''
+      search_text:
+        description: 'Text to search'
+        required: true
+        default: ''
+      replace_text:
+        description: 'Text to replace with'
+        required: true
+        default: ''
+      preview_only:
+        description: 'Preview only, do not commit'
+        required: false
+        default: 'true'
+
+jobs:
+  proxy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Call Modify JSON Workflow
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          workflow: modify-json-via-browser.yaml
+          ref: main
+          token: ${{ secrets.PAT_TOKEN }}
+          inputs: |
+            fullname: ${{ github.event.inputs.fullname }}
+            rubrique: ${{ github.event.inputs.rubrique }}
+            search_text: ${{ github.event.inputs.search_text }}
+            replace_text: ${{ github.event.inputs.replace_text }}
+            preview_only: ${{ github.event.inputs.preview_only }}

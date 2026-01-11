@@ -23,8 +23,9 @@ button:hover { background-color: #45a049; }
 #backToTop { position: fixed; bottom: 20px; right: 20px; padding: 10px 14px; font-size: 15px; border-radius: 30px; background-color: rgba(0,102,204,0.6); color: white; border: none; cursor: pointer; display: none; backdrop-filter: blur(2px); box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
 #backToTop:hover { background-color: rgba(0,102,204,0.85); }
 .editor-input { width: 90%; margin-bottom: 5px; }
-.editor-btn { margin-top: 5px; background-color: #007BFF; }
+.editor-btn { margin-top: 5px; background-color: #007BFF; color: white; border: none; padding: 6px 12px; cursor: pointer; }
 .editor-btn:hover { background-color: #005BB5; }
+.editor-div { margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -39,6 +40,8 @@ button:hover { background-color: #45a049; }
             <button onclick="checkAllRubriques()">Tout cocher</button>
             <button onclick="uncheckAllRubriques()">Tout décocher</button>
         </div>
+        <!-- Conteneur dédié pour les checkbox -->
+        <div id="rubriques-list"></div>
     </div>
     <button onclick="performSearch()">Rechercher</button>
 </div>
@@ -64,7 +67,7 @@ fetch(jsonUrl).then(r => r.json()).then(json => {
             if (k !== 'source') rubriques.add(k);
         });
     });
-    const c = document.getElementById('rubriques-container');
+    const c = document.getElementById('rubriques-list'); // <-- conteneur dédié
     rubriques.forEach(r => {
         const d = document.createElement('div');
         d.className = 'rubrique-checkbox';
@@ -210,12 +213,7 @@ function openEditor(item){
 
 /* Simuler déclenchement du workflow proxy */
 function triggerWorkflow(fullname, modifications){
-    const statusDiv=document.getElementById('workflow-status');
-    statusDiv.textContent="🚀 Déclenchement du workflow proxy...\n";
-    Object.entries(modifications).forEach(([key,val])=>{
-        statusDiv.textContent+=`✔ ${fullname} → ${key} : ${val}\n`;
-    });
-    statusDiv.textContent+="\n✅ Vérifie GitHub Actions pour appliquer réellement les changements.";
+    alert(`Modifications pour ${fullname} :\n` + JSON.stringify(modifications, null, 2) + "\n\nVérifie GitHub Actions pour appliquer réellement les changements.");
 }
 
 /* Entrée = recherche */

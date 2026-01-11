@@ -155,16 +155,21 @@ function performSearch() {
 }
 
 
-function highlightField(text, exact, terms) {
-    let r = text;
-    if(exact) {
+function highlightField(html, exact, terms) {
+    if (!exact && (!terms || !terms.length)) return html;
+
+    let result = html;
+
+    if (exact) {
         const re = new RegExp(exact, 'gi');
-        r = r.replace(re, m => `<span class="match">${m}</span>`);
+        return result.replace(re, m => `<span class="match">${m}</span>`);
     }
-    terms.forEach(t => r = r.replace(t, m => `<span class="match">${m}</span>`));
-    return r;
+
+    terms.forEach(t => {
+        if (!t.regex) return;
+        result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
+    });
+
+    return result;
 }
 
-document.getElementById('search').addEventListener('keydown', e => {
-    if(e.key === 'Enter') performSearch();
-});

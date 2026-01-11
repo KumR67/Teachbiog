@@ -155,27 +155,27 @@ function performSearch() {
 }
 
 
-// function highlightField(html, exact, terms) {
-//     if (!exact && (!terms || !terms.length)) return html;
-
-//     let result = html;
-
-//     if (exact) {
-//         const re = new RegExp(exact, 'gi');
-//         return result.replace(re, m => `<span class="match">${m}</span>`);
-//     }
-
-//     terms.forEach(t => {
-//         if (!t.regex) return;
-//         result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
-//     });
-
-//     return result;
-// }
-
 function highlightField(html, exact, terms) {
-    return html; // affichage brut, HTML interprété
+    if (!exact && (!terms || !terms.length)) return html;
+
+    let result = html;
+
+    if (exact) {
+        const re = new RegExp(exact, 'gi');
+        return result.replace(re, m => `<span class="match">${m}</span>`);
+    }
+
+    terms.forEach(t => {
+        if (!t.regex) return;
+        result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
+    });
+
+    return result;
 }
+
+// function highlightField(html, exact, terms) {
+//     return html; // affichage brut, HTML interprété
+// }
 
 document.getElementById('search').addEventListener('keydown', e => {
     if(e.key === 'Enter') performSearch();

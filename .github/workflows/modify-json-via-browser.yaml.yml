@@ -1,0 +1,92 @@
+name: Modify JSON via Browser Editor
+
+on:
+  workflow_dispatch:
+    inputs:
+      fullname:
+        description: 'Fullname of the record to modify (leave empty for all)'
+        required: false
+        default: ''
+      rubrique:
+        description: 'Name of the field/rubrique to modify (leave empty for all)'
+        required: false
+        default: ''
+      search_text:
+        description: 'Text to search'
+        required: true
+        default: ''
+      replace_text:
+        description: 'Text to replace with'
+        required: true
+        default: ''
+      preview_only:
+        description: 'Preview only, do not commit'
+        required: false
+        default: 'true'
+
+jobs:
+  modify-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Apply modifications
+        run: |
+          python << 'EOF'
+          import json
+          from pathlib import Path
+          import sys
+
+          path = Path("data/Word_to_Json_BiblioTeacher.json")
+
+          fullname = "${{ github.event.inputs.fullname }}"
+          rubrique = "${{ github.event.inputs.rubrique }}"
+          search_text = "${{ github.event.inputs.search_text }}"
+          replace_text = "${{ github.event.inputs.replace_text }}"
+          preview_only = "${{ github.event.inputs.preview_only }}".lower() == "true"
+
+          with open(path, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          modified = 0
+          preview_lines = []
+
+          for item in data:
+              if fullname and item.get("Fullname") != fullname:
+                  continue
+              for key, value in item.items():
+                  if key in ["source", "file"]:
+                      continue
+                  if rubrique and key != rubrique:
+                      continue
+                  if isinstance(value, str) and search_text in value:
+                      modified += 1
+                      if preview_only:
+                          preview_lines.append(f'{item.get("Fullname")} -> {key}: "{search_text}" → "{replace_text}"')
+                      else:
+                          item[key] = value.replace(search_text, replace_text)
+
+          if preview_only:
+              print(f"Preview mode: {modified} fields would be modified")
+              for line in preview_lines:
+                  print(line)
+              sys.exit(0)
+
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+
+          print(f"✅ Modification applied: {modified} fields updated")
+          EOF
+
+      - name: Commit changes
+        if: ${{ github.event.inputs.preview_only != 'true' }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/Word_to_Json_BiblioTeacher.json
+          git diff --cached --quiet || git commit -m "Update JSON via browser editor"
+          git push

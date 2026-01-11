@@ -51,23 +51,43 @@ function uncheckAllRubriques() {
 
 // Recherche
 function parseQuery(raw) {
-    const q = raw.trim();
+    const q = raw.trim().toLowerCase();
     if (!q) return { exact: '', terms: [] };
 
+    // Phrase exacte entre guillemets
     const exactMatch = q.match(/^"(.*)"$/);
-    if (exactMatch) return { exact: exactMatch[1].toLowerCase(), terms: [] };
+    if (exactMatch) {
+        return {
+            exact: exactMatch[1],
+            terms: []
+        };
+    }
 
-    const terms = q.toLowerCase().split(/\s+/).map(t => {
-        const clean = t.replace(/\*/g,'');
+    const parts = q.split(/\s+/).filter(Boolean);
+
+    const terms = parts.map(p => {
+        const clean = p.replace(/\*/g, '');
         let regex;
-        if(t.startsWith('*') && t.endsWith('*')) regex = new RegExp(clean,'i');
-        else if(t.startsWith('*')) regex = new RegExp(clean+'\\b','i');
-        else if(t.endsWith('*')) regex = new RegExp('\\b'+clean,'i');
-        else regex = new RegExp(clean,'i');
-        return regex;
+
+        if (p.startsWith('*') && p.endsWith('*')) {
+            regex = new RegExp(clean, 'i');
+        } else if (p.startsWith('*')) {
+            regex = new RegExp(clean + '\\b', 'i');
+        } else if (p.endsWith('*')) {
+            regex = new RegExp('\\b' + clean, 'i');
+        } else {
+            regex = new RegExp(clean, 'i');
+        }
+
+        return {
+            raw: p,
+            regex
+        };
     });
+
     return { exact: '', terms };
 }
+
 
 function performSearch() {
     const input = document.getElementById('search').value;

@@ -1,16 +1,15 @@
 function addEditToolbar(container, item) {
-    if (container.querySelector('.edit-toolbar')) return;
-
     const toolbar = document.createElement('div');
     toolbar.className = 'edit-toolbar';
 
     const editBtn = document.createElement('button');
     editBtn.textContent = '✏️ Modifier';
     editBtn.className = 'edit-btn';
+
     editBtn.onclick = () => enableEditMode(container, item);
 
     toolbar.appendChild(editBtn);
-    container.appendChild(toolbar);
+    container.prepend(toolbar);
 }
 
 function enableEditMode(container, item) {
@@ -18,9 +17,11 @@ function enableEditMode(container, item) {
     container.classList.add('editing');
 
     const fields = container.querySelectorAll('[data-field]');
+
     fields.forEach(div => {
         const field = div.dataset.field;
         const value = item[field] ?? '';
+
         div.innerHTML = `
             <strong>${field} :</strong><br>
             <textarea data-edit-field="${field}">${value}</textarea>
@@ -32,70 +33,80 @@ function enableEditMode(container, item) {
 
     const previewBtn = document.createElement('button');
     previewBtn.textContent = '👁️ Prévisualiser';
-    previewBtn.onclick = () => previewEdits(container);
+    previewBtn.onclick = () => {
+        alert("Prévisualisation appliquée (affichage brut)");
+        // Optionnel : tu pourrais mettre à jour un div preview ici
+    };
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = '✔️ Valider';
-    saveBtn.onclick = () => commitEdits(container, item);
+    saveBtn.onclick = () => saveEdits(container, item);
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = '❌ Annuler';
-    cancelBtn.onclick = () => cancelEdits(container);
+    cancelBtn.onclick = () => cancelEdits();
 
     actions.appendChild(previewBtn);
     actions.appendChild(saveBtn);
     actions.appendChild(cancelBtn);
-
     container.appendChild(actions);
 }
 
-function previewEdits(container) {
+function saveEdits(container, item) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
-    edits.forEach(t => {
-        t.parentElement.innerHTML = `<strong>${t.dataset.editField} :</strong> ${t.value}`;
-    });
-    alert("Prévisualisation appliquée (affichage brut)");
-}
+    const modifiedFields = {};
 
-function commitEdits(container, item) {
-    const edits = container.querySelectorAll('textarea[data-edit-field]');
     edits.forEach(t => {
-        item[t.dataset.editField] = t.value;
+        const field = t.dataset.editField;
+        const value = t.value;
+        item[field] = value; // mise à jour locale
+        modifiedFields[field] = value; // pour envoyer au workflow
     });
 
-    alert("Modifications enregistrées localement");
+    // Envoi vers GitHub Actions via workflow proxy
+    const fullname = item['Fullname'];
+    if (!fullname) {
+        alert("Impossible : la fiche n'a pas de Fullname");
+        return;
+    }
 
-    // --- Appel GitHub workflow pour modifier le JSON ---
-    edits.forEach(t => {
-        const payload = {
-            fullname: item.Fullname,
-            rubrique: t.dataset.editField,
-            search_text: "",          // on modifie directement la rubrique
-            replace_text: t.value,
-            preview_only: "false"     // commit réel
-        };
-
-        fetch('https://api.github.com/repos/KumR67/Teachbiog/actions/workflows/trigger-modify-json.yaml/dispatches', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token REPLACE_WITH_YOUR_PAT`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ref: 'main',
-                inputs: payload
-            })
-        }).then(res => {
-            if(res.ok) console.log(`✅ Workflow déclenché pour ${payload.rubrique}`);
-            else console.error("❌ Erreur déclenchement workflow", res.status);
-        }).catch(e => console.error(e));
+    // On peut envoyer chaque rubrique modifiée une par une
+    Object.entries(modifiedFields).forEach(([field, value]) => {
+        triggerWorkflow(fullname, field, value);
     });
 
-    performSearch();
-}
-
-function cancelEdits(container) {
+    alert('✅ Modifications envoyées à GitHub');
     container.classList.remove('editing');
+    performSearch(); // rafraîchit l’affichage
+}
+
+function cancelEdits() {
     performSearch();
+}
+
+// ===== Fonction pour déclencher le workflow via fetch =====
+function triggerWorkflow(fullname, field, newText) {
+    fetch('https://api.github.com/repos/KumR67/Teachbiog/actions/workflows/trigger-modify-json.yaml/dispatches', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'Bearer ' + GITHUB_PAT, // à définir dans main.js ou via input
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            ref: 'main',
+            inputs: {
+                fullname: fullname,
+                rubrique: field,
+                search_text: '',   // tu peux le remplir si nécessaire
+                replace_text: newText,
+                preview_only: 'false'
+            }
+        })
+    })
+    .then(resp => {
+        if (resp.ok) console.log(`✅ Workflow déclenché pour ${fullname} → ${field}`);
+        else console.error('❌ Erreur déclenchement workflow', resp.status, resp.statusText);
+    })
+    .catch(err => console.error('❌ Erreur fetch workflow', err));
 }

@@ -35,12 +35,12 @@
 <div id="workflow-status" style="margin-top:20px; white-space: pre-line;"></div>
 
 <script>
-// ⚠️ Remplace par ton token PAT GitHub (avec repo scope)
-const GITHUB_TOKEN = "ghp_XXXXXXXXXXXXXXXXXXXX";
+// Nom du workflow proxy dans GitHub
+const WORKFLOW_PROXY = "trigger-modify-json.yaml";
 const REPO_OWNER = "KumR67";
 const REPO_NAME = "Teachbiog";
-const WORKFLOW_ID = "modify-json-via-browser.yaml"; // workflow file name
 
+// Fonction pour déclencher le workflow proxy depuis GitHub UI
 async function runWorkflow() {
   const fullname = document.getElementById("fullname").value;
   const rubrique = document.getElementById("rubrique").value;
@@ -49,35 +49,24 @@ async function runWorkflow() {
   const preview_only = document.getElementById("preview_only").checked;
 
   const statusDiv = document.getElementById("workflow-status");
-  statusDiv.textContent = "🚀 Running workflow...";
+  statusDiv.textContent = "🚀 Triggering workflow...";
 
-  const response = await fetch(
-    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_ID}/dispatches`,
-    {
-      method: "POST",
-      headers: {
-        "Accept": "application/vnd.github+json",
-        "Authorization": "Bearer " + GITHUB_TOKEN,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        ref: "main",
-        inputs: {
-          fullname,
-          rubrique,
-          search_text,
-          replace_text,
-          preview_only: preview_only.toString()
-        }
-      })
-    }
-  );
+  try {
+    // GitHub UI permet de déclencher le workflow via workflow_dispatch
+    // Ici, on guide l'utilisateur : il clique sur "Run workflow" sur GitHub
+    statusDiv.textContent =
+      `✅ Fill in inputs and trigger the workflow:\n\n` +
+      `1. Go to Actions → ${WORKFLOW_PROXY} → Run workflow\n` +
+      `2. Fill inputs:\n` +
+      `   - fullname: ${fullname}\n` +
+      `   - rubrique: ${rubrique}\n` +
+      `   - search_text: ${search_text}\n` +
+      `   - replace_text: ${replace_text}\n` +
+      `   - preview_only: ${preview_only}\n\n` +
+      `3. Click "Run workflow" on GitHub.`;
 
-  if (response.ok) {
-    statusDiv.textContent = "✅ Workflow triggered! Check GitHub Actions for results.";
-  } else {
-    const errorText = await response.text();
-    statusDiv.textContent = `❌ Error triggering workflow:\n${errorText}`;
+  } catch (err) {
+    statusDiv.textContent = `❌ Error: ${err}`;
   }
 }
 </script>

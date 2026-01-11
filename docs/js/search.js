@@ -174,9 +174,7 @@ function highlightField(html, exact, terms) {
     return result;
 }
 
-// Lors de l'affichage des champs dans performSearch
-// ...on conserve innerHTML pour que le HTML du JSON s'affiche
-line.innerHTML = `<strong>${f} :</strong> ` + highlightField(String(item[f]), exact, terms);
+
 
 // function highlightField(html, exact, terms) {
 //     if (!exact && (!terms || !terms.length)) return html;

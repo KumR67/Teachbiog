@@ -1,42 +1,58 @@
-name: Modify specific record
+name: Modify a specific record via input
 
 on:
   workflow_dispatch:
+    inputs:
+      fullname:
+        description: 'Fullname of the record to modify'
+        required: true
+        default: 'Fischer, Michael'
+      search_text:
+        description: 'Text to search in the record'
+        required: true
+        default: 'Михаэль'
+      replace_text:
+        description: 'Text to replace with'
+        required: true
+        default: 'Михаил'
 
 jobs:
-  modify-fischer:
+  modify-record:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Update Fischer, Michael
+      - name: Modify JSON record
         run: |
           python << 'EOF'
           import json
+          import sys
+          from pathlib import Path
 
-          path = "data/Word_to_Json_BiblioTeacher.json"
+          path = Path("data/Word_to_Json_BiblioTeacher.json")
 
-          # Charger le JSON
+          fullname = "${{ github.event.inputs.fullname }}"
+          search_text = "${{ github.event.inputs.search_text }}"
+          replace_text = "${{ github.event.inputs.replace_text }}"
+
           with open(path, "r", encoding="utf-8") as f:
               data = json.load(f)
 
           modified = 0
 
-          # Parcourir toutes les fiches
           for item in data:
-              if item.get("Fullname") == "Fischer, Michael":
-                  # Boucle sur les rubriques pour remplacer le texte
+              if item.get("Fullname") == fullname:
                   for key, value in item.items():
-                      if isinstance(value, str) and "Михаэль" in value:
-                          item[key] = value.replace("Михаэль", "Михаил")
+                      if isinstance(value, str) and search_text in value:
+                          item[key] = value.replace(search_text, replace_text)
                           modified += 1
 
-          # Vérifier qu’on a bien modifié
           print(f"✅ Fields modified: {modified}")
 
-          # Sauvegarder le JSON
           with open(path, "w", encoding="utf-8") as f:
               json.dump(data, f, indent=2, ensure_ascii=False)
           EOF
@@ -46,5 +62,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add data/Word_to_Json_BiblioTeacher.json
-          git diff --cached --quiet || git commit -m "Corrected Михаэль → Михаил in Fischer, Michael"
+          git diff --cached --quiet || git commit -m "Updated record via GitHub Actions"
           git push

@@ -1,11 +1,39 @@
-name: Hello World Action
+name: Modify JSON file
 
 on:
   workflow_dispatch:
 
 jobs:
-  hello:
+  modify-json:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Say hello
-        run: echo "Hello from GitHub Actions"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Modify JSON
+        run: |
+          python << 'EOF'
+          import json
+          from datetime import datetime
+
+          path = "data/Word_to_Json_BiblioTeacher.json"
+
+          with open(path, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          # petite modification inoffensive
+          for item in data:
+              item["_touched"] = datetime.utcnow().isoformat()
+
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+          EOF
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/Word_to_Json_BiblioTeacher.json
+          git commit -m "Automated test modification of JSON"
+          git push

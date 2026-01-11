@@ -1,3 +1,28 @@
+function enableEditing(recordDiv, item) {
+    Object.keys(item).forEach(f => {
+        if(f==='source') return;
+        const fieldDiv = recordDiv.querySelector(`div[data-field="${f}"]`);
+        if(!fieldDiv) return;
+
+        const current = fieldDiv.textContent.replace(f+": ","");
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'edit-field';
+        input.value = current;
+        fieldDiv.innerHTML = '';
+        fieldDiv.appendChild(input);
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '✔';
+        saveBtn.className = 'edit-btn';
+        saveBtn.onclick = () => {
+            item[f] = input.value;
+            fieldDiv.textContent = f+": "+input.value;
+        };
+        fieldDiv.appendChild(saveBtn);
+    });
+}
+
 function addEditButtons(recordDiv, item) {
     const editBtn = document.createElement('button');
     editBtn.textContent = 'Modifier cette fiche';
@@ -22,33 +47,7 @@ function addEditButtons(recordDiv, item) {
             });
         });
         alert(`✅ ${count} champs modifiés dans toutes les fiches.`);
-        performSearch(); // rafraîchit l’affichage
+        performSearch();
     };
     recordDiv.appendChild(globalBtn);
-}
-
-/* Version complète de enableEditing pour modifier champ par champ */
-function enableEditing(recordDiv, item) {
-    Object.keys(item).forEach(f => {
-        if(f==='source') return;
-        const fieldDiv = recordDiv.querySelector(`div[data-field="${f}"]`);
-        if(!fieldDiv) return;
-
-        const current = fieldDiv.textContent.replace(f+": ","");
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'edit-field';
-        input.value = current;
-        fieldDiv.innerHTML = '';
-        fieldDiv.appendChild(input);
-
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = '✔';
-        saveBtn.className = 'edit-btn';
-        saveBtn.onclick = () => {
-            item[f] = input.value;
-            fieldDiv.textContent = f+": "+input.value;
-        };
-        fieldDiv.appendChild(saveBtn);
-    });
 }

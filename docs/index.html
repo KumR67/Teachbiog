@@ -22,10 +22,21 @@ button:hover { background-color: #45a049; }
 .source-item:hover { text-decoration: underline; }
 #backToTop { position: fixed; bottom: 20px; right: 20px; padding: 10px 14px; font-size: 15px; border-radius: 30px; background-color: rgba(0,102,204,0.6); color: white; border: none; cursor: pointer; display: none; backdrop-filter: blur(2px); box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
 #backToTop:hover { background-color: rgba(0,102,204,0.85); }
+
 .editor-input { width: 90%; margin-bottom: 5px; }
 .editor-btn { margin-top: 5px; background-color: #007BFF; color: white; border: none; padding: 6px 12px; cursor: pointer; }
 .editor-btn:hover { background-color: #005BB5; }
-.editor-div { margin-top: 10px; }
+.editor-div { margin-top: 10px; border: 1px solid #aaa; padding: 10px; background-color: #eef; }
+
+#workflow-status {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #888;
+    border-radius: 5px;
+    background-color: #fff8dc;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
 </style>
 </head>
 <body>
@@ -40,7 +51,6 @@ button:hover { background-color: #45a049; }
             <button onclick="checkAllRubriques()">Tout cocher</button>
             <button onclick="uncheckAllRubriques()">Tout décocher</button>
         </div>
-        <!-- Conteneur dédié pour les checkbox -->
         <div id="rubriques-list"></div>
     </div>
     <button onclick="performSearch()">Rechercher</button>
@@ -51,6 +61,9 @@ button:hover { background-color: #45a049; }
     <div id="sources-column"></div>
     <div id="records-column"></div>
 </div>
+
+<!-- Panneau de statut workflow -->
+<div id="workflow-status">Modifications prêtes apparaîtront ici...</div>
 
 <button id="backToTop" title="Remonter en haut">↑ Haut</button>
 
@@ -67,7 +80,7 @@ fetch(jsonUrl).then(r => r.json()).then(json => {
             if (k !== 'source') rubriques.add(k);
         });
     });
-    const c = document.getElementById('rubriques-list'); // <-- conteneur dédié
+    const c = document.getElementById('rubriques-list');
     rubriques.forEach(r => {
         const d = document.createElement('div');
         d.className = 'rubrique-checkbox';
@@ -147,7 +160,6 @@ function performSearch(){
             }
         });
 
-        // Bouton pour modifier la fiche
         const editBtn = document.createElement('button');
         editBtn.textContent='Modifier cette fiche';
         editBtn.className='editor-btn';
@@ -170,17 +182,12 @@ function highlightField(text, exactPhrase, terms){
 function openEditor(item){
     const recordDiv=document.getElementById(`record-${data.indexOf(item)}`);
     let existingEditor = recordDiv.querySelector('.editor-div');
-    if(existingEditor){ existingEditor.remove(); return; } // toggle
+    if(existingEditor){ existingEditor.remove(); return; }
     const editorDiv=document.createElement('div');
     editorDiv.className='editor-div';
-    editorDiv.style.border='1px solid #aaa';
-    editorDiv.style.padding='10px';
-    editorDiv.style.marginTop='10px';
-    editorDiv.style.backgroundColor='#eef';
     const title=document.createElement('strong');
     title.textContent=`Édition: ${item.Fullname}`;
-    editorDiv.appendChild(title);
-    editorDiv.appendChild(document.createElement('br'));
+    editorDiv.appendChild(title); editorDiv.appendChild(document.createElement('br'));
 
     Object.keys(item).forEach(key=>{
         if(key==='source'||key==='file') return;
@@ -204,16 +211,13 @@ function openEditor(item){
         const modifications={};
         inputs.forEach(inp=>{if(inp.value!==item[inp.dataset.key]) modifications[inp.dataset.key]=inp.value;});
         if(Object.keys(modifications).length===0){ alert('Aucune modification détectée.'); return; }
-        triggerWorkflow(item.Fullname, modifications);
+        // Mise à jour du panneau workflow
+        const statusDiv=document.getElementById('workflow-status');
+        statusDiv.textContent=`Modifications prêtes pour ${item.Fullname} :\n${JSON.stringify(modifications, null, 2)}`;
     };
     editorDiv.appendChild(applyBtn);
 
     recordDiv.appendChild(editorDiv);
-}
-
-/* Simuler déclenchement du workflow proxy */
-function triggerWorkflow(fullname, modifications){
-    alert(`Modifications pour ${fullname} :\n` + JSON.stringify(modifications, null, 2) + "\n\nVérifie GitHub Actions pour appliquer réellement les changements.");
 }
 
 /* Entrée = recherche */

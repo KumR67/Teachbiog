@@ -1,41 +1,88 @@
-/* ===== Barre d'édition en haut de chaque fiche ===== */
+/* ===== Styles pour les zones éditables ===== */
+textarea[data-edit-field] {
+    width: 100%;
+    min-height: 50px;
+    margin: 4px 0;
+    padding: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* ===== Toolbar de modification ===== */
 .edit-toolbar {
     display: flex;
-    gap: 5px;
-    margin-bottom: 5px;
-    position: sticky;
-    top: 0;
-    background: #f9f9f9;
-    z-index: 5;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 5px;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
 }
 
-/* ===== Boutons ===== */
-.edit-toolbar button,
-.edit-actions button {
-    padding: 5px 10px;
+.edit-toolbar button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 6px 10px;
     cursor: pointer;
+    border-radius: 3px;
+    font-size: 13px;
 }
 
-/* ===== Actions en bas de la fiche ===== */
+.edit-toolbar button:hover {
+    background-color: #45a049;
+}
+
+/* ===== Actions de validation ===== */
 .edit-actions {
+    margin-top: 6px;
     display: flex;
-    gap: 5px;
-    margin-top: 10px;
+    gap: 6px;
 }
 
-/* ===== Textarea pour édition ===== */
-textarea {
-    width: 100%;
-    min-height: 60px;
-    font-family: Arial, sans-serif;
+.edit-actions button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 13px;
 }
 
-/* ===== Prévisualisation ===== */
-.preview-area {
-    border: 1px dashed #ccc;
+.edit-actions button:hover {
+    background-color: #0b7dda;
+}
+
+/* ===== Indication de mode édition ===== */
+.result.editing {
+    border: 1px solid #2196F3;
+    background-color: #e8f3ff;
     padding: 10px;
-    background: #fff8dc;
-    margin-top: 5px;
+    border-radius: 5px;
+}
+
+/* ===== Surlignage des champs modifiés / sélection ===== */
+textarea[data-edit-field]:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 2px rgba(33, 150, 243, 0.8);
+    outline: none;
+}
+
+/* ===== Optionnel : boutons flottants si nécessaire ===== */
+button.edit-btn,
+button.preview-btn {
+    flex-shrink: 0;
+}
+
+/* ===== Pour la prévisualisation ===== */
+.result.preview {
+    background-color: #fffbe6;
+}
+
+/* ===== Petit ajustement général ===== */
+.edit-toolbar, .edit-actions {
+    flex-wrap: wrap;
 }

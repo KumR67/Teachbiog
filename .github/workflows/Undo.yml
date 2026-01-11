@@ -1,0 +1,29 @@
+name: Undo last JSON update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  undo-last-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Revert last commit on JSON
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          # On vérifie le dernier commit qui a touché le JSON
+          LAST_COMMIT=$(git log -n 1 --pretty=format:%H -- data/Word_to_Json_BiblioTeacher.json)
+          echo "Last commit modifying JSON: $LAST_COMMIT"
+
+          # Crée un commit inverse
+          git revert --no-edit $LAST_COMMIT
+
+          # Push le revert
+          git push

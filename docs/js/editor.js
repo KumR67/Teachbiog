@@ -124,34 +124,17 @@ function previewEdits(container, item) {
     });
 }
 
+
 function saveEdits(container, item) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
     edits.forEach(t => {
-        // Mise à jour du JSON local
         item[t.dataset.editField] = t.value;
     });
 
     alert('Modifications enregistrées (localement)');
-
     container.classList.remove('editing');
-
-    // Au lieu de tout refaire, on met à jour le DOM directement
-    edits.forEach(t => {
-        const fieldDiv = container.querySelector(`[data-field="${t.dataset.editField}"]`);
-        if (fieldDiv) {
-            fieldDiv.innerHTML = `<strong>${t.dataset.editField} :</strong> ${t.value}`;
-        }
-    });
-// function saveEdits(container, item) {
-//     const edits = container.querySelectorAll('textarea[data-edit-field]');
-//     edits.forEach(t => {
-//         item[t.dataset.editField] = t.value;
-//     });
-
-//     alert('Modifications enregistrées (localement)');
-//     container.classList.remove('editing');
-//     performSearch(); // rafraîchit l’affichage
-// }
+    performSearch(); // rafraîchit l’affichage
+}
 
 function cancelEdits() {
     performSearch();

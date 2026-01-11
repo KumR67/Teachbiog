@@ -1,12 +1,27 @@
+/* ===== Body & layout général ===== */
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
     line-height: 1.6;
+    overflow-x: hidden; /* pas de scroll horizontal */
+}
+
+h1 {
+    margin-bottom: 15px;
+}
+
+/* ===== Zone recherche ===== */
+#search-area {
+    margin-bottom: 20px;
 }
 
 #search {
     width: 300px;
     padding: 8px;
+}
+
+#rubriques-controls {
+    margin-top: 10px;
 }
 
 #rubriques-container {
@@ -36,29 +51,7 @@ button:hover {
     background-color: #45a049;
 }
 
-.match {
-    background-color: #ffff00;
-}
-
-.result {
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
-.source {
-    font-weight: bold;
-    color: #0066cc;
-    margin-bottom: 5px;
-}
-
-#results-count {
-    margin-top: 20px;
-    font-weight: bold;
-}
-
+/* ===== Résultats ===== */
 #results-layout {
     display: flex;
     gap: 20px;
@@ -66,13 +59,17 @@ button:hover {
 }
 
 #sources-column {
-    width: 260px;
+    width: 250px;
     border-right: 1px solid #ddd;
     padding-right: 10px;
+    overflow-y: auto;
+    max-height: 80vh;
 }
 
 #records-column {
     flex: 1;
+    overflow-y: auto;
+    max-height: 80vh;
 }
 
 .source-item {
@@ -85,7 +82,21 @@ button:hover {
     text-decoration: underline;
 }
 
-/* Bouton retour en haut */
+.result {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    position: relative;
+    margin-bottom: 15px;
+}
+
+/* ===== Surlignage ===== */
+.match {
+    background-color: yellow;
+}
+
+/* ===== Retour en haut ===== */
 #backToTop {
     position: fixed;
     bottom: 20px;

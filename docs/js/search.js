@@ -177,4 +177,7 @@ function highlightField(html, exact, terms) {
     return html; // affichage brut, HTML interprété
 }
 
+document.getElementById('search').addEventListener('keydown', e => {
+    if(e.key === 'Enter') performSearch();
+});
 

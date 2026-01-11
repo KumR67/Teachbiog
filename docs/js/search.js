@@ -45,25 +45,16 @@ function uncheckAllRubriques() {
 function parseQuery(raw) {
     const q = raw.trim();
     if (!q) return { exactPhrase: '', terms: [] };
-    const exact = q.match(/^"(.*)"$/);
-    if (exact) return { exactPhrase: exact[1].toLowerCase(), terms: [] };
 
-    const parts = q.toLowerCase().split(/\s+/).filter(Boolean);
+    // Phrase exacte entre ""
+    const exactMatch = q.match(/"(.*)"/);
+    if(exactMatch) return { exactPhrase: exactMatch[1].toLowerCase(), terms: [] };
+
+    // Termes simples
+    const parts = q.split(/\s+/).filter(Boolean);
     const terms = parts.map(p => {
         const clean = p.replace(/\*/g, '');
-        let regex;
-        if (p.startsWith('*') && p.endsWith('*')) regex = new RegExp(clean, 'i');
-        else if (p.startsWith('*')) regex = new RegExp(clean+'\\b', 'i');
-        else if (p.endsWith('*')) regex = new RegExp('\\b'+clean, 'i');
-        else regex = new RegExp(clean, 'i');
-        return { raw: p, regex };
+        return { raw: p, regex: new RegExp(clean, 'i') };
     });
     return { exactPhrase: '', terms };
-}
-
-function highlightField(text, exactPhrase, terms) {
-    let r = text;
-    if (exactPhrase) r = r.replace(new RegExp(exactPhrase, 'gi'), m=>`<span class="match">${m}</span>`);
-    terms.forEach(t => { r = r.replace(t.regex, m=>`<span class="match">${m}</span>`); });
-    return r;
 }

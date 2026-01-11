@@ -1,8 +1,4 @@
-// editor.js
-
 function addEditToolbar(container, item) {
-    if(container.querySelector('.edit-toolbar')) return; // éviter doublons
-
     const toolbar = document.createElement('div');
     toolbar.className = 'edit-toolbar';
 
@@ -12,7 +8,7 @@ function addEditToolbar(container, item) {
     editBtn.onclick = () => enableEditMode(container, item);
 
     toolbar.appendChild(editBtn);
-    container.prepend(toolbar);
+    container.appendChild(toolbar); // le toolbar reste en bas
 }
 
 function enableEditMode(container, item) {
@@ -20,13 +16,14 @@ function enableEditMode(container, item) {
     container.classList.add('editing');
 
     const fields = container.querySelectorAll('[data-field]');
+
     fields.forEach(div => {
         const field = div.dataset.field;
         const value = item[field] ?? '';
-        div.innerHTML = `<strong>${field} :</strong><br><textarea data-edit-field="${field}">${value}</textarea>`;
+        div.innerHTML = `<strong>${field} :</strong><br>
+                         <textarea data-edit-field="${field}">${value}</textarea>`;
     });
 
-    // Actions en bas
     const actions = document.createElement('div');
     actions.className = 'edit-actions';
 
@@ -36,7 +33,7 @@ function enableEditMode(container, item) {
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = '✔️ Valider';
-    saveBtn.onclick = () => commitEdits(container, item);
+    saveBtn.onclick = () => saveEdits(container, item);
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = '❌ Annuler';
@@ -52,66 +49,59 @@ function enableEditMode(container, item) {
 function previewEdits(container) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
     edits.forEach(t => {
-        const field = t.dataset.editField;
-        const value = t.value;
         const div = t.parentElement;
-        div.innerHTML = `<strong>${field} :</strong> ${value}`;
+        div.innerHTML = `<strong>${t.dataset.editField} :</strong><br>${t.value}`;
     });
-    alert("Prévisualisation appliquée (affichage brut)");
+    alert('Prévisualisation appliquée (affichage brut)');
 }
 
-function commitEdits(container, item) {
+function saveEdits(container, item) {
     const edits = container.querySelectorAll('textarea[data-edit-field]');
     const updates = {};
-
     edits.forEach(t => {
-        const field = t.dataset.editField;
-        const value = t.value;
-        item[field] = value; // local
-        updates[field] = value; // pour le workflow
+        updates[t.dataset.editField] = t.value;
     });
 
-    // Déclenchement du workflow proxy
-    triggerProxyWorkflow(item.Fullname, updates);
+    // Mettre à jour localement
+    Object.keys(updates).forEach(f => {
+        item[f] = updates[f];
+    });
 
-    alert("Modification envoyée à GitHub (workflow déclenché)");
-    container.classList.remove('editing');
-    performSearch(); // rafraîchir l'affichage
+    alert('Modifications enregistrées localement');
+
+    // Déclencher le workflow proxy pour GitHub
+    triggerProxyWorkflow(item['Fullname'], updates);
+
+    // Réaffichage
+    performSearch();
 }
 
 function cancelEdits() {
     performSearch();
 }
 
-// --- Déclenchement du workflow proxy ---
 function triggerProxyWorkflow(fullname, updates) {
-    const payload = {
-        fullname: fullname,
-        search_text: '',       // peut être vide, on utilise les rubriques
-        replace_text: '',      // idem
-        preview_only: 'false'
-    };
-
-    // Ajouter toutes les rubriques modifiées comme input 'rubrique=valeur'
-    Object.keys(updates).forEach((field, idx) => {
-        payload[`rubrique_${idx}`] = field + '||' + updates[field];
-    });
-
-    fetch('https://api.github.com/repos/KumR67/Teachbiog/actions/workflows/trigger-modify-json.yaml/dispatches', {
+    // On envoie les données au workflow proxy côté GitHub
+    fetch('.github/workflows/trigger-modify-json.yaml', { 
+        // chemin relatif au workflow proxy
         method: 'POST',
         headers: {
             'Accept': 'application/vnd.github+json',
             'Content-Type': 'application/json'
-            // pas de token côté client, workflow proxy s'en occupe
         },
         body: JSON.stringify({
             ref: 'main',
-            inputs: payload
+            inputs: {
+                fullname: fullname,
+                search_text: '', // si tu veux, on peut remplir
+                replace_text: '', // à gérer côté workflow pour toutes les rubriques
+                preview_only: 'false'
+            }
         })
     })
     .then(r => {
-        if(r.ok) console.log('✅ Workflow déclenché');
-        else r.text().then(txt => console.error('❌ Erreur déclenchement workflow :', txt));
+        if(r.ok) alert('✅ Modification envoyée à GitHub');
+        else alert('❌ Erreur déclenchement workflow');
     })
-    .catch(e => console.error('❌ Erreur réseau workflow:', e));
+    .catch(e => alert('❌ Erreur réseau : ' + e));
 }

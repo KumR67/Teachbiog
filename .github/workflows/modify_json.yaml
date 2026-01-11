@@ -1,0 +1,59 @@
+name: Modify JSON record
+
+on:
+  workflow_dispatch:
+    inputs:
+      fullname:
+        description: 'Nom complet de la fiche'
+        required: true
+      field_name:
+        description: 'Nom de la rubrique à modifier'
+        required: true
+      new_text:
+        description: 'Texte de remplacement'
+        required: true
+
+jobs:
+  modify-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Modify JSON
+        run: |
+          python << 'EOF'
+          import json
+          from pathlib import Path
+
+          path = Path("docs/data/Word_to_Json_BiblioTeacher.json")
+
+          fullname = "${{ github.event.inputs.fullname }}"
+          field_name = "${{ github.event.inputs.field_name }}"
+          new_text = "${{ github.event.inputs.new_text }}"
+
+          with open(path, encoding="utf-8") as f:
+              data = json.load(f)
+
+          modified = 0
+          for item in data:
+              if item.get("Fullname") == fullname:
+                  if field_name in item:
+                      item[field_name] = new_text
+                      modified += 1
+
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+
+          print(f"✅ {modified} champ(s) modifié(s) pour {fullname}")
+          EOF
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/data/Word_to_Json_BiblioTeacher.json
+          git diff --cached --quiet || git commit -m "Modified JSON record via workflow"
+          git push

@@ -1,53 +1,57 @@
-function enableEditing(recordDiv, item) {
-    Object.keys(item).forEach(f => {
-        if(f==='source') return;
-        const fieldDiv = recordDiv.querySelector(`div[data-field="${f}"]`);
-        if(!fieldDiv) return;
+function addEditToolbar(recordDiv, item) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'edit-toolbar';
 
-        const current = fieldDiv.textContent.replace(f+": ","");
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'edit-field';
-        input.value = current;
-        fieldDiv.innerHTML = '';
-        fieldDiv.appendChild(input);
-
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = '✔';
-        saveBtn.className = 'edit-btn';
-        saveBtn.onclick = () => {
-            item[f] = input.value;
-            fieldDiv.textContent = f+": "+input.value;
-        };
-        fieldDiv.appendChild(saveBtn);
-    });
-}
-
-function addEditButtons(recordDiv, item) {
     const editBtn = document.createElement('button');
     editBtn.textContent = 'Modifier cette fiche';
     editBtn.className = 'edit-btn';
-    editBtn.onclick = () => enableEditing(recordDiv, item);
-    recordDiv.appendChild(editBtn);
 
-    const globalBtn = document.createElement('button');
-    globalBtn.textContent = 'Remplacer dans toutes les fiches';
-    globalBtn.className = 'edit-btn';
-    globalBtn.onclick = () => {
-        const searchText = prompt("Texte à rechercher :");
-        const replaceText = prompt("Texte de remplacement :");
-        if(!searchText) return;
-        let count = 0;
-        data.forEach(fiche => {
-            Object.keys(fiche).forEach(k=>{
-                if(typeof fiche[k]==='string' && fiche[k].includes(searchText)) {
-                    fiche[k] = fiche[k].replaceAll(searchText, replaceText);
-                    count++;
-                }
-            });
+    editBtn.onclick = () => enableEditing(recordDiv, item);
+
+    toolbar.appendChild(editBtn);
+    recordDiv.appendChild(toolbar);
+}
+
+function enableEditing(recordDiv, item) {
+    const original = JSON.parse(JSON.stringify(item)); // clone pour annuler
+
+    recordDiv.querySelectorAll('[data-field]').forEach(div => {
+        const field = div.dataset.field;
+        const value = item[field] ?? '';
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'edit-field';
+        textarea.value = value;
+
+        div.innerHTML = `<strong>${field} :</strong>`;
+        div.appendChild(textarea);
+    });
+
+    const toolbar = recordDiv.querySelector('.edit-toolbar');
+    toolbar.innerHTML = '';
+
+    const applyBtn = document.createElement('button');
+    applyBtn.textContent = 'Appliquer (local)';
+    applyBtn.className = 'edit-btn confirm';
+
+    applyBtn.onclick = () => {
+        recordDiv.querySelectorAll('[data-field]').forEach(div => {
+            const field = div.dataset.field;
+            const textarea = div.querySelector('textarea');
+            if (textarea) item[field] = textarea.value;
         });
-        alert(`✅ ${count} champs modifiés dans toutes les fiches.`);
         performSearch();
     };
-    recordDiv.appendChild(globalBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Annuler';
+    cancelBtn.className = 'edit-btn cancel';
+
+    cancelBtn.onclick = () => {
+        Object.assign(item, original);
+        performSearch();
+    };
+
+    toolbar.appendChild(applyBtn);
+    toolbar.appendChild(cancelBtn);
 }

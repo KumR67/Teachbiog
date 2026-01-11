@@ -3,56 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recherche et modification des enregistrements</title>
-<style>
-body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-#search { width: 300px; padding: 8px; }
-#rubriques-container { margin: 10px 0; max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
-.rubrique-checkbox { margin-right: 10px; margin-bottom: 5px; display: inline-block; min-width: 150px; }
-button { padding: 8px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-button:hover { background-color: #45a049; }
-.match { background-color: #ffff00; }
-.result { border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 5px; background-color: #f9f9f9; }
-.source { font-weight: bold; color: #0066cc; margin-bottom: 5px; }
-#results-count { margin-top: 20px; font-weight: bold; }
-#results-layout { display: flex; gap: 20px; margin-top: 10px; }
-#sources-column { width: 260px; border-right: 1px solid #ddd; padding-right: 10px; }
-#records-column { flex: 1; }
-.source-item { cursor: pointer; color: #0066cc; margin-bottom: 6px; }
-.source-item:hover { text-decoration: underline; }
-#backToTop { position: fixed; bottom: 20px; right: 20px; padding: 10px 14px; font-size: 15px; border-radius: 30px; background-color: rgba(0,102,204,0.6); color: white; border: none; cursor: pointer; display: none; backdrop-filter: blur(2px); box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
-#backToTop:hover { background-color: rgba(0,102,204,0.85); }
-
-.editor-input { width: 90%; margin-bottom: 5px; }
-.editor-btn { margin-top: 5px; background-color: #007BFF; color: white; border: none; padding: 6px 12px; cursor: pointer; }
-.editor-btn:hover { background-color: #005BB5; }
-.editor-div { margin-top: 10px; border: 1px solid #aaa; padding: 10px; background-color: #eef; }
-
-#workflow-status {
-    margin-top: 10px;
-    padding: 10px;
-    border: 1px solid #888;
-    border-radius: 5px;
-    background-color: #fff8dc;
-    font-family: monospace;
-    white-space: pre-wrap;
-}
-</style>
+<title>Recherche avancée et modification des enregistrements</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/editor.css">
 </head>
+
 <body>
 
 <h1>Recherche avancée et modification des enregistrements</h1>
 
-<div>
-    <input type="text" id="search" placeholder='Ex : archiv*  *tion  Greek Slavic School  "expression exacte"'>
-
+<div id="search-area">
+    <input type="text" id="search"
+        placeholder='Ex : archiv* *tion "expression exacte"'>
     <div id="rubriques-container">
         <strong>Filtres rubriques :</strong>
         <button onclick="checkAllRubriques()">Tout cocher</button>
         <button onclick="uncheckAllRubriques()">Tout décocher</button>
-        <!-- Les checkboxes seront injectées ici -->
     </div>
-
     <button onclick="performSearch()">Rechercher</button>
 </div>
 
@@ -62,157 +29,12 @@ button:hover { background-color: #45a049; }
     <div id="records-column"></div>
 </div>
 
-<div id="workflow-status">Modifications prêtes apparaîtront ici...</div>
+<div id="workflow-status"></div>
 <button id="backToTop" title="Remonter en haut">↑ Haut</button>
 
-<script>
-let data = [];
-let rubriques = new Set();
-const jsonUrl = 'https://gist.githubusercontent.com/KumR67/c09dc17f2720708f30308e787547c939/raw/c5105b67accb02801154256afa2a3bc5b1db50f6/tous_les_enregistrements.json';
-
-/* Chargement JSON */
-fetch(jsonUrl).then(r=>r.json()).then(json=>{
-    data=json;
-    data.forEach(item=>Object.keys(item).forEach(k=>{if(k!=='source') rubriques.add(k);}));
-    const container=document.getElementById('rubriques-container');
-    rubriques.forEach(r=>{
-        const div=document.createElement('div');
-        div.className='rubrique-checkbox';
-        div.innerHTML=`<input type="checkbox" class="rubrique-check" id="rubrique-${r}" checked>
-                       <label for="rubrique-${r}">${r}</label>`;
-        container.appendChild(div);
-    });
-});
-
-/* Rubriques */
-function getSelectedRubriques(){ return [...rubriques].filter(r=>document.getElementById(`rubrique-${r}`)?.checked); }
-function checkAllRubriques(){ document.querySelectorAll('.rubrique-check').forEach(cb=>cb.checked=true); }
-function uncheckAllRubriques(){ document.querySelectorAll('.rubrique-check').forEach(cb=>cb.checked=false); }
-
-/* Parsing */
-function parseQuery(raw){
-    const q=raw.trim();
-    if(!q) return {exactPhrase:'',terms:[]};
-    const exact=q.match(/^"(.*)"$/);
-    if(exact) return {exactPhrase: exact[1].toLowerCase(), terms:[]};
-    const parts=q.toLowerCase().split(/\s+/).filter(Boolean);
-    const terms=parts.map(p=>{
-        const clean=p.replace(/\*/g,'');
-        let regex;
-        if(p.startsWith('*')&&p.endsWith('*')) regex=new RegExp(clean,'i');
-        else if(p.startsWith('*')) regex=new RegExp(clean+'\\b','i');
-        else if(p.endsWith('*')) regex=new RegExp('\\b'+clean,'i');
-        else regex=new RegExp(clean,'i');
-        return {raw:p, regex};
-    });
-    return {exactPhrase:'',terms};
-}
-
-/* Recherche */
-function performSearch(){
-    const {exactPhrase,terms}=parseQuery(document.getElementById('search').value);
-    const selectedRubriques=getSelectedRubriques();
-    const sourcesCol=document.getElementById('sources-column');
-    const recordsCol=document.getElementById('records-column');
-    const countDiv=document.getElementById('results-count');
-    sourcesCol.innerHTML=''; recordsCol.innerHTML=''; countDiv.innerHTML='';
-    const results=data.filter(item=>Object.entries(item).some(([k,v])=>{
-        if(k==='source') return false;
-        if(selectedRubriques.length && !selectedRubriques.includes(k)) return false;
-        const text=String(v);
-        if(exactPhrase) return text.toLowerCase().includes(exactPhrase);
-        if(terms.length) return terms.every(t=>t.regex.test(text));
-        return true;
-    }));
-    countDiv.textContent=`${results.length} enregistrement(s) trouvé(s)`;
-    results.forEach((item,index)=>{
-        const recordId=`record-${index}`;
-        const s=document.createElement('div');
-        s.className='source-item';
-        s.textContent=item.source;
-        s.onclick=()=>document.getElementById(recordId).scrollIntoView({behavior:'smooth'});
-        sourcesCol.appendChild(s);
-
-        const d=document.createElement('div');
-        d.className='result';
-        d.id=recordId;
-        const title=document.createElement('div');
-        title.className='source';
-        title.textContent=item.source;
-        d.appendChild(title);
-
-        Object.keys(item).forEach(f=>{
-            if(f!=='source'){
-                const line=document.createElement('div');
-                line.innerHTML=`<strong>${f} :</strong> `+highlightField(String(item[f]),exactPhrase,terms);
-                d.appendChild(line);
-            }
-        });
-
-        const editBtn=document.createElement('button');
-        editBtn.textContent='Modifier cette fiche';
-        editBtn.className='editor-btn';
-        editBtn.onclick=()=>openEditor(item);
-        d.appendChild(editBtn);
-
-        recordsCol.appendChild(d);
-    });
-}
-
-/* Surlignage */
-function highlightField(text, exactPhrase, terms){
-    let r=text;
-    if(exactPhrase){ const re=new RegExp(exactPhrase,'gi'); r=r.replace(re,m=>`<span class="match">${m}</span>`);}
-    terms.forEach(t=>{r=r.replace(t.regex,m=>`<span class="match">${m}</span>`);});
-    return r;
-}
-
-/* Éditeur inline */
-function openEditor(item){
-    const recordDiv=document.getElementById(`record-${data.indexOf(item)}`);
-    let existingEditor=recordDiv.querySelector('.editor-div');
-    if(existingEditor){ existingEditor.remove(); return; }
-    const editorDiv=document.createElement('div');
-    editorDiv.className='editor-div';
-    const title=document.createElement('strong');
-    title.textContent=`Édition: ${item.Fullname}`;
-    editorDiv.appendChild(title); editorDiv.appendChild(document.createElement('br'));
-
-    Object.keys(item).forEach(key=>{
-        if(key==='source'||key==='file') return;
-        const label=document.createElement('label');
-        label.textContent=key+': ';
-        editorDiv.appendChild(label);
-        const input=document.createElement('input');
-        input.type='text';
-        input.value=item[key];
-        input.dataset.key=key;
-        input.className='editor-input';
-        editorDiv.appendChild(input);
-        editorDiv.appendChild(document.createElement('br'));
-    });
-
-    const applyBtn=document.createElement('button');
-    applyBtn.textContent='Appliquer les modifications';
-    applyBtn.className='editor-btn';
-    applyBtn.onclick=()=>{
-        const inputs=editorDiv.querySelectorAll('input');
-        const modifications={};
-        inputs.forEach(inp=>{if(inp.value!==item[inp.dataset.key]) modifications[inp.dataset.key]=inp.value;});
-        if(Object.keys(modifications).length===0){ alert('Aucune modification détectée.'); return; }
-        const statusDiv=document.getElementById('workflow-status');
-        statusDiv.textContent=`Modifications prêtes pour ${item.Fullname} :\n${JSON.stringify(modifications,null,2)}`;
-    };
-    editorDiv.appendChild(applyBtn);
-
-    recordDiv.appendChild(editorDiv);
-}
-
-document.getElementById('search').addEventListener('keydown', e=>{if(e.key==='Enter') performSearch();});
-const backToTop=document.getElementById('backToTop');
-window.addEventListener('scroll',()=>{ backToTop.style.display=window.scrollY>300?'block':'none'; });
-backToTop.addEventListener('click',()=>{ window.scrollTo({ top:0, behavior:'smooth' }); });
-</script>
+<script src="js/search.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/main.js"></script>
 
 </body>
 </html>

@@ -1,3 +1,10 @@
+function highlightField(text, exactPhrase, terms) {
+    let r = text;
+    if(exactPhrase) r = r.replace(new RegExp(exactPhrase, 'gi'), m=>`<span class="match">${m}</span>`);
+    terms.forEach(t => r = r.replace(t.regex, m=>`<span class="match">${m}</span>`));
+    return r;
+}
+
 function performSearch() {
     const { exactPhrase, terms } = parseQuery(document.getElementById('search').value);
     const selectedRubriques = getSelectedRubriques();
@@ -14,9 +21,10 @@ function performSearch() {
         return Object.entries(item).some(([k,v])=>{
             if(k==='source') return false;
             if(selectedRubriques.length && !selectedRubriques.includes(k)) return false;
-            const text = String(v);
-            if(exactPhrase) return text.toLowerCase().includes(exactPhrase);
-            if(terms.length) return terms.every(t=>t.regex.test(text));
+
+            const text = String(v).toLowerCase();
+            if(exactPhrase) return text.includes(exactPhrase);
+            if(terms.length) return terms.every(t => t.regex.test(text));
             return true;
         });
     });
@@ -56,7 +64,4 @@ function performSearch() {
 const backToTop = document.getElementById('backToTop');
 window.addEventListener('scroll',()=>backToTop.style.display=window.scrollY>300?'block':'none');
 backToTop.addEventListener('click',()=>window.scrollTo({top:0, behavior:'smooth'}));
-
-document.getElementById('search').addEventListener('keydown', e => {
-    if (e.key === 'Enter') performSearch();
-});
+document.getElementById('search').addEventListener('keydown', e => { if(e.key==='Enter') performSearch(); });

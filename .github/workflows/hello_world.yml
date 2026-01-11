@@ -13,22 +13,13 @@ jobs:
 
       - name: Modify JSON
         run: |
-          python << 'EOF'
-          import json
-          from datetime import datetime
+                - name: Inspect JSON file
+        run: |
+          echo "📂 File info:"
+          ls -l data
+          echo "📖 First 20 lines of JSON:"
+          sed -n '1,20p' data/Word_to_Json_BiblioTeacher.json
 
-          path = "data/Word_to_Json_BiblioTeacher.json"
-
-          with open(path, "r", encoding="utf-8") as f:
-              data = json.load(f)
-
-          # petite modification inoffensive
-          for item in data:
-              item["_touched"] = datetime.utcnow().isoformat()
-
-          with open(path, "w", encoding="utf-8") as f:
-              json.dump(data, f, indent=2, ensure_ascii=False)
-          EOF
 
       - name: Commit changes
         run: |

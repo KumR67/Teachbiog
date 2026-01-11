@@ -154,28 +154,49 @@ function performSearch() {
     });
 }
 
-
 function highlightField(html, exact, terms) {
-    if (!exact && (!terms || !terms.length)) return html;
+    let result = html; // On part du HTML tel quel
 
-    let result = html;
-
+    // Surlignage phrase exacte
     if (exact) {
         const re = new RegExp(exact, 'gi');
-        return result.replace(re, m => `<span class="match">${m}</span>`);
+        result = result.replace(re, m => `<span class="match">${m}</span>`);
     }
 
-    terms.forEach(t => {
-        if (!t.regex) return;
-        result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
-    });
+    // Surlignage des termes
+    if (terms && terms.length) {
+        terms.forEach(t => {
+            if (!t.regex) return;
+            result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
+        });
+    }
 
     return result;
 }
 
+// Lors de l'affichage des champs dans performSearch
+// ...on conserve innerHTML pour que le HTML du JSON s'affiche
+line.innerHTML = `<strong>${f} :</strong> ` + highlightField(String(item[f]), exact, terms);
+
 // function highlightField(html, exact, terms) {
-//     return html; // affichage brut, HTML interprété
+//     if (!exact && (!terms || !terms.length)) return html;
+
+//     let result = html;
+
+//     if (exact) {
+//         const re = new RegExp(exact, 'gi');
+//         return result.replace(re, m => `<span class="match">${m}</span>`);
+//     }
+
+//     terms.forEach(t => {
+//         if (!t.regex) return;
+//         result = result.replace(t.regex, m => `<span class="match">${m}</span>`);
+//     });
+
+//     return result;
 // }
+
+
 
 document.getElementById('search').addEventListener('keydown', e => {
     if(e.key === 'Enter') performSearch();

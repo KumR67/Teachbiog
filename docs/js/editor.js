@@ -58,8 +58,8 @@
 // function cancelEdits() {
 //     performSearch();
 // }
-
 function addEditToolbar(container, item) {
+    // Supprime le prepend pour mettre les boutons en bas
     const toolbar = document.createElement('div');
     toolbar.className = 'edit-toolbar';
 
@@ -70,11 +70,13 @@ function addEditToolbar(container, item) {
 
     const previewBtn = document.createElement('button');
     previewBtn.textContent = '👁️ Prévisualiser';
-    previewBtn.onclick = () => togglePreview(container, item);
+    previewBtn.className = 'preview-btn';
+    previewBtn.onclick = () => previewEdits(container, item);
 
     toolbar.appendChild(editBtn);
     toolbar.appendChild(previewBtn);
-    container.prepend(toolbar);
+
+    container.appendChild(toolbar); // ajout **en bas** de la fiche
 }
 
 function enableEditMode(container, item) {
@@ -85,15 +87,21 @@ function enableEditMode(container, item) {
     fields.forEach(div => {
         const field = div.dataset.field;
         const value = item[field] ?? '';
-
         div.innerHTML = `
             <strong>${field} :</strong><br>
             <textarea data-edit-field="${field}">${value}</textarea>
         `;
     });
 
-    const actions = document.createElement('div');
-    actions.className = 'edit-actions';
+    // Actions en bas
+    let actions = container.querySelector('.edit-actions');
+    if (!actions) {
+        actions = document.createElement('div');
+        actions.className = 'edit-actions';
+        container.appendChild(actions);
+    } else {
+        actions.innerHTML = '';
+    }
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = '✔️ Valider';
@@ -105,7 +113,15 @@ function enableEditMode(container, item) {
 
     actions.appendChild(saveBtn);
     actions.appendChild(cancelBtn);
-    container.appendChild(actions);
+}
+
+// Prévisualisation locale
+function previewEdits(container, item) {
+    const edits = container.querySelectorAll('textarea[data-edit-field]');
+    edits.forEach(t => {
+        const fieldDiv = container.querySelector(`[data-field="${t.dataset.editField}"]`);
+        if (fieldDiv) fieldDiv.innerHTML = `<strong>${t.dataset.editField} :</strong> ${t.value}`;
+    });
 }
 
 function saveEdits(container, item) {
@@ -115,29 +131,10 @@ function saveEdits(container, item) {
     });
 
     alert('Modifications enregistrées (localement)');
-    performSearch(); // rafraîchit l'affichage
+    container.classList.remove('editing');
+    performSearch(); // rafraîchit l’affichage
 }
 
 function cancelEdits() {
     performSearch();
-}
-
-function togglePreview(container, item) {
-    let preview = container.querySelector('.preview-area');
-    if (preview) {
-        preview.remove();
-        return;
-    }
-
-    preview = document.createElement('div');
-    preview.className = 'preview-area';
-
-    const fields = Object.keys(item).filter(k => k !== 'source');
-    let html = '';
-    fields.forEach(f => {
-        html += `<strong>${f} :</strong> ${item[f]}<br>`;
-    });
-
-    preview.innerHTML = html;
-    container.appendChild(preview);
 }

@@ -2,7 +2,6 @@ let data = [];
 let rubriques = new Set();
 const jsonUrl = 'data/tous_les_enregistrements.json';
 
-/* Charger JSON */
 fetch(jsonUrl)
 .then(r => r.json())
 .then(json => {
@@ -15,7 +14,6 @@ fetch(jsonUrl)
     renderRubriques();
 });
 
-/* Affiche les rubriques avec checkbox */
 function renderRubriques() {
     const c = document.getElementById('rubriques-container');
     rubriques.forEach(r => {
@@ -29,7 +27,6 @@ function renderRubriques() {
     });
 }
 
-/* Rubriques */
 function getSelectedRubriques() {
     return [...rubriques].filter(r => {
         const cb = document.getElementById(`rubrique-${r}`);
@@ -45,7 +42,6 @@ function uncheckAllRubriques() {
     document.querySelectorAll('.rubrique-check').forEach(cb => cb.checked = false);
 }
 
-/* Parsing avec troncature */
 function parseQuery(raw) {
     const q = raw.trim();
     if (!q) return { exactPhrase: '', terms: [] };
@@ -65,7 +61,6 @@ function parseQuery(raw) {
     return { exactPhrase: '', terms };
 }
 
-/* Surlignage */
 function highlightField(text, exactPhrase, terms) {
     let r = text;
     if (exactPhrase) r = r.replace(new RegExp(exactPhrase, 'gi'), m=>`<span class="match">${m}</span>`);
